@@ -15,11 +15,10 @@ Admissions portal for the JNTUGV RUKF-IIBMP 2026 application process.
 ## Project Structure
 
 ```text
-jntugv-portal/
-  src/                    React frontend
-  server/                 Node.js admissions API
-  server/data/admissions/ Year/process schemas and runtime data
-  public/                 Static assets and logos
+src/                    React frontend
+server/                 Node.js admissions API
+server/data/admissions/ Year/process schemas and runtime data
+public/                 Static assets and logos
 ```
 
 ## Development
@@ -27,7 +26,6 @@ jntugv-portal/
 Install dependencies:
 
 ```bash
-cd jntugv-portal
 npm install
 ```
 

@@ -1,12 +1,9 @@
 # Dependencies
 node_modules/
-jntugv-portal/node_modules/
 
 # Build output
 dist/
 dist-ssr/
-jntugv-portal/dist/
-jntugv-portal/dist-ssr/
 
 # Logs and local env
 logs/
@@ -19,13 +16,13 @@ pnpm-debug.log*
 .env.*
 
 # Runtime admissions data and uploaded files
-jntugv-portal/server/data/admin-users.json
-jntugv-portal/server/data/applications.json
-jntugv-portal/server/data/admissions/*/*/applications.json
-jntugv-portal/server/data/admissions/*/*/uploads/
+server/data/admin-users.json
+server/data/applications.json
+server/data/admissions/*/*/applications.json
+server/data/admissions/*/*/uploads/
 
 # Keep yearly process schemas in source control
-!jntugv-portal/server/data/admissions/*/*/schema.json
+!server/data/admissions/*/*/schema.json
 
 # Editor and OS files
 .vscode/*
