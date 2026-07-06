@@ -1,0 +1,125 @@
+.custom-select-field {
+  position: relative;
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1.5rem;
+}
+
+.custom-select-label {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.custom-select-control {
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.custom-select-control.has-value {
+  color: var(--text-main);
+}
+
+.custom-select-control:hover {
+  border-color: #93c5fd;
+}
+
+.custom-select-control:focus,
+.custom-select-control.open {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.custom-select-chevron {
+  color: var(--accent-blue);
+  transition: transform 0.2s ease;
+}
+
+.custom-select-control.open .custom-select-chevron {
+  transform: rotate(180deg);
+}
+
+.custom-select-popover {
+  position: absolute;
+  z-index: 55;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  width: 100%;
+  min-width: 230px;
+  padding: 0.55rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  box-shadow: var(--shadow-lg);
+}
+
+.custom-select-search {
+  width: 100%;
+  margin-bottom: 0.45rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+
+.custom-select-search:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.custom-select-list {
+  display: grid;
+  gap: 0.25rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.custom-select-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 0.8rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--primary-light);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+}
+
+.custom-select-option:hover {
+  background: #eff6ff;
+  color: var(--accent-blue);
+}
+
+.custom-select-option.selected {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.custom-select-empty {
+  padding: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-align: center;
+}

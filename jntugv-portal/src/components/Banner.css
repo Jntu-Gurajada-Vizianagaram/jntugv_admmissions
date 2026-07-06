@@ -1,0 +1,25 @@
+.bg-banner {
+  background: linear-gradient(135deg, #d63384 0%, #1a4f72 100%);
+  padding: 60px 0;
+  color: #fff;
+}
+
+.banner-content h2 {
+  font-size: 26px;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.banner-content p {
+  font-size: 13px;
+  color: #ddd;
+}
+
+.banner-content a {
+  color: #fff;
+}
+
+.banner-content a:hover {
+  color: var(--jntuh-pink);
+  text-decoration: none;
+}

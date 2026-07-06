@@ -1,0 +1,76 @@
+.programme-card {
+  display: grid;
+  gap: clamp(1rem, 2vw, 1.25rem);
+  margin-bottom: clamp(1rem, 2vw, 1.5rem);
+}
+
+.programme-options,
+.exam-selector-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.exam-selector-grid {
+  grid-template-columns: 1fr;
+}
+
+.option-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--primary-light);
+  font-weight: 600;
+}
+
+.option-row.compact {
+  align-items: center;
+}
+
+.option-row input {
+  margin-top: 0.2rem;
+}
+
+.exam-details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.exam-detail-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-main);
+}
+
+.exam-detail-panel h4 {
+  margin: 0;
+  color: var(--primary-blue);
+  font-size: 1rem;
+}
+
+@media (min-width: 640px) {
+  .exam-selector-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 980px) {
+  .programme-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .exam-selector-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .exam-details-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+}

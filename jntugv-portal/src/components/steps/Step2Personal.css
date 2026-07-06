@@ -1,0 +1,77 @@
+.form-layout-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(1rem, 2vw, 1.5rem);
+  align-items: start;
+}
+
+.form-fields-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(0.85rem, 1.5vw, 1rem);
+  min-width: 0;
+}
+
+.upload-sidebar {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.upload-box {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-main);
+  text-align: center;
+  cursor: pointer;
+}
+
+.upload-preview {
+  min-height: 132px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.sig-preview {
+  min-height: 84px;
+}
+
+.upload-preview img {
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+}
+
+.upload-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+@media (min-width: 680px) {
+  .form-fields-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .upload-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1180px) {
+  .form-layout-split {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  }
+
+  .upload-sidebar {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,274 @@
+.application-container {
+  width: min(100%, 100vw);
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: clamp(0.75rem, 1.5vw, 1.5rem);
+}
+
+.form-wrapper {
+  background: white;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  padding: clamp(1rem, 2.2vw, 2.5rem);
+  width: 100%;
+  min-width: 0;
+}
+
+.application-device-block {
+  display: none;
+}
+
+.form-page-title {
+  color: var(--primary-blue);
+  margin: 0;
+  font-size: clamp(1.25rem, 2.3vw, 1.8rem);
+  font-weight: 700;
+}
+
+.form-title-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+  align-items: center;
+  margin-bottom: clamp(1rem, 2vw, 2rem);
+}
+
+.draft-status {
+  margin: 0.3rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.save-draft-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.form-content-area {
+  margin-top: clamp(1rem, 2vw, 2rem);
+  min-width: 0;
+}
+
+/* Common Step Styling for Modern JNTUGV */
+.step-header {
+  margin-bottom: clamp(1rem, 2vw, 2rem);
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+
+.step-title {
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  color: var(--primary-light);
+  margin-bottom: 0.5rem;
+}
+
+.step-desc {
+  color: var(--text-muted);
+}
+
+.step-nav {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin-top: clamp(1.5rem, 3vw, 3rem);
+  padding-top: clamp(1rem, 2vw, 2rem);
+  border-top: 1px solid var(--border-color);
+}
+
+.step-nav .btn {
+  width: 100%;
+}
+
+.form-card {
+  min-width: 0;
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-main);
+}
+
+.form-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--primary-blue);
+  font-weight: 800;
+}
+
+.form-card-num {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary-blue);
+  color: white;
+  flex: 0 0 auto;
+}
+
+.form-alert {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  background: #fef2f2;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.submission-success {
+  max-width: none;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.success-mark {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.submission-success h2 {
+  margin: 0 0 0.5rem;
+  color: var(--primary-blue);
+}
+
+.submission-success p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.registration-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 2rem auto;
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-main);
+  max-width: 420px;
+}
+
+.registration-box span {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.registration-box strong {
+  color: var(--primary-blue);
+  font-size: 1.15rem;
+  overflow-wrap: anywhere;
+}
+
+.success-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.post-submit-reminder {
+  max-width: 620px;
+  margin: 0 auto 1.5rem;
+  padding: 1rem;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  background: #eff6ff;
+}
+
+.post-submit-reminder h3 {
+  margin: 0 0 0.35rem;
+  color: var(--primary-blue);
+  font-size: 1.05rem;
+}
+
+.post-submit-reminder p {
+  margin: 0;
+  color: var(--primary-light);
+}
+
+.submitted-print-preview {
+  margin-top: 2rem;
+  text-align: left;
+  width: 100%;
+}
+
+@media (min-width: 720px) {
+  .form-title-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .save-draft-button {
+    width: auto;
+  }
+
+  .step-nav {
+    flex-direction: row;
+  }
+
+  .step-nav .btn {
+    width: auto;
+  }
+}
+
+@media (min-width: 1200px) {
+  .application-container {
+    padding-inline: clamp(1rem, 1.5vw, 2rem);
+  }
+}
+
+@media (max-width: 1023px) {
+  .application-container {
+    display: grid;
+    place-items: center;
+    min-height: min(72vh, 720px);
+    padding: 1rem;
+  }
+
+  .desktop-only-application {
+    display: none !important;
+  }
+
+  .application-device-block {
+    display: block;
+    width: min(100%, 520px);
+    padding: 1.25rem;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius-md);
+    background: #eff6ff;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .application-device-block h2 {
+    margin: 0 0 0.5rem;
+    color: var(--primary-blue);
+    font-size: 1.25rem;
+  }
+
+  .application-device-block p {
+    margin: 0;
+    color: var(--primary-light);
+    line-height: 1.5;
+  }
+}
+
+@media print {
+  .application-device-block {
+    display: none !important;
+  }
+
+  .desktop-only-application {
+    display: block !important;
+  }
+}

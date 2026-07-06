@@ -1,0 +1,26 @@
+.not-found-page {
+  display: grid;
+  place-items: center;
+  min-height: 55vh;
+  padding: 2rem 1rem;
+}
+
+.not-found-panel {
+  width: min(560px, 100%);
+  padding: 2rem;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: white;
+  box-shadow: var(--shadow-md);
+}
+
+.not-found-panel h2 {
+  margin: 0 0 0.5rem;
+  color: var(--primary-blue);
+}
+
+.not-found-panel p:not(.page-kicker) {
+  margin: 0 0 1.5rem;
+  color: var(--text-muted);
+}

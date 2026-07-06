@@ -1,0 +1,131 @@
+.main-content {
+  background: var(--jntuh-light-bg);
+  padding-bottom: 50px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -15px;
+  margin-left: -15px;
+}
+
+.col-lg-8 { flex: 0 0 66.666667%; max-width: 66.666667%; padding: 0 15px; }
+.col-lg-4 { flex: 0 0 33.333333%; max-width: 33.333333%; padding: 0 15px; }
+
+.pt-5 { padding-top: 3rem !important; }
+.mt-4 { margin-top: 1.5rem !important; }
+.mb-4 { margin-bottom: 1.5rem !important; }
+
+.welcome-text {
+  font-size: 20px;
+  color: #333;
+  display: none; /* In screenshot, welcome text is hidden or small, but in DOM it exists. Let's show it subtly or hide based on layout. Actually, I'll let it show as h3. */
+}
+
+hr {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border: 0;
+  border-top: 1px solid rgba(0,0,0,.1);
+}
+
+.arrow-icon {
+  color: var(--jntuh-pink);
+  margin-right: 5px;
+}
+
+.steps-btn {
+  color: red;
+  font-size: 16px;
+}
+
+.steps-btn:hover {
+  text-decoration: underline;
+}
+
+.section-title {
+  font-size: 18px;
+  color: var(--jntuh-blue);
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.table-responsive {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  margin-bottom: 1rem;
+  background-color: transparent;
+  border-collapse: collapse;
+}
+
+.table-bordered {
+  border: 1px solid #dee2e6;
+}
+
+.table-bordered td, .table-bordered th {
+  border: 1px solid #dee2e6;
+  padding: 12px;
+  background: #fff;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(0,0,0,.05);
+}
+
+.table-striped tbody tr:nth-of-type(odd) td {
+  background-color: #f9f9f9;
+}
+
+.ziom-apps td a {
+  color: #333;
+  display: block;
+}
+
+.ziom-apps td a span {
+  color: var(--jntuh-pink);
+  font-weight: bold;
+}
+
+.ziom-apps ul {
+  margin-top: 10px;
+  padding-left: 20px;
+}
+
+.ziom-apps ul li a {
+  color: #555;
+}
+
+.text-danger {
+  color: red !important;
+}
+
+.blink_me {
+  animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+  50% { opacity: 0; }
+}
+
+.ziom-bold a {
+  font-weight: bold;
+  color: #000 !important;
+}
+
+.bullet {
+  color: #de1c85;
+  margin-right: 5px;
+}
+
+@media (max-width: 992px) {
+  .col-lg-8, .col-lg-4 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}

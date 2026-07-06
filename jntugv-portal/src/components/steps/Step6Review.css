@@ -1,0 +1,134 @@
+.review-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.review-section {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+}
+
+.review-section h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--primary-blue);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.review-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.review-item .label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.review-item .value {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.summary-text {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.declaration-section {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.checkbox-label {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  cursor: pointer;
+  line-height: 1.5;
+  color: var(--primary-light);
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin-top: 0.25rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+}
+
+.review-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-main);
+}
+
+.review-print-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.declaration-input-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 1rem;
+  flex: 1;
+}
+
+.auto-date-field {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 54px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+}
+
+.auto-date-label {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.auto-date-field strong {
+  color: var(--text-main);
+  font-size: 1rem;
+}
+
+.auto-date-field small {
+  color: var(--accent-blue);
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .review-toolbar,
+  .declaration-input-grid {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .review-print-actions,
+  .review-print-actions .btn {
+    width: 100%;
+  }
+}

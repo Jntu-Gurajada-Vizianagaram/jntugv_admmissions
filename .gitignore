@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+jntugv-portal/node_modules/
+
+# Build output
+dist/
+dist-ssr/
+jntugv-portal/dist/
+jntugv-portal/dist-ssr/
+
+# Logs and local env
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.local
+.env
+.env.*
+
+# Runtime admissions data and uploaded files
+jntugv-portal/server/data/admin-users.json
+jntugv-portal/server/data/applications.json
+jntugv-portal/server/data/admissions/*/*/applications.json
+jntugv-portal/server/data/admissions/*/*/uploads/
+
+# Keep yearly process schemas in source control
+!jntugv-portal/server/data/admissions/*/*/schema.json
+
+# Editor and OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+~$*.docx
+
+# Codex/local automation state
+.agents/
+.codex/

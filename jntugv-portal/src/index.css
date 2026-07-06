@@ -1,0 +1,163 @@
+:root {
+  /* Modern Web Typography */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  /* Modern Color Palette */
+  --primary-blue: #0f172a;      /* Slate 900 */
+  --primary-light: #1e293b;     /* Slate 800 */
+  --accent-gold: #f59e0b;       /* Amber 500 */
+  --accent-blue: #3b82f6;       /* Blue 500 */
+  
+  /* Backgrounds */
+  --bg-main: #f8fafc;           /* Slate 50 */
+  --bg-card: #ffffff;
+  
+  /* Text Colors */
+  --text-main: #0f172a;         /* Slate 900 */
+  --text-muted: #64748b;        /* Slate 500 */
+  
+  /* Borders and Shadows (Premium) */
+  --border-color: #e2e8f0;      /* Slate 200 */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-lg: 0 10px 20px rgba(0,0,0,0.05), 0 6px 6px rgba(0,0,0,0.04);
+  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.4);
+  
+  /* Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glassmorphism Utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient Text Utility */
+.text-gradient {
+  background: linear-gradient(135deg, var(--accent-blue), #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Floating Label Form Elements (Premium Form UX) */
+.form-group-floating {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.form-input-floating {
+  width: 100%;
+  padding: 1.25rem 1rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background-color: #fff;
+  color: var(--text-main);
+}
+
+.form-input-floating:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.form-label-floating {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  color: var(--text-muted);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  transform-origin: left top;
+}
+
+.form-input-floating:focus + .form-label-floating,
+.form-input-floating:not(:placeholder-shown) + .form-label-floating {
+  transform: translateY(-0.75rem) scale(0.85);
+  color: var(--accent-blue);
+}
+
+/* Modern Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  gap: 0.5rem; /* For icons */
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary-light);
+  border: 2px solid var(--primary-light);
+}
+
+.btn-outline:hover {
+  background-color: var(--primary-light);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, var(--accent-gold), #d97706);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-accent:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
