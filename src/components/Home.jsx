@@ -1,119 +1,83 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Monitor, Cpu, Globe, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { CalendarDays, CheckCircle2, ClipboardList, FileCheck2, GraduationCap, ShieldCheck } from 'lucide-react';
 import './Home.css';
 
 export default function Home() {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.2 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
-  };
-
   return (
     <div className="home-container">
-      {/* Hero Section */}
       <section className="hero-section">
-        <motion.div 
-          className="hero-content"
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-        >
-          <motion.div variants={itemVariants} className="hero-badge">
-            Applications are commencing shortly
-          </motion.div>
-          <motion.div variants={itemVariants} className="commencing-marker">
-            <strong>Admissions Notice</strong>
-            <span>IIBMP 2026-27 online applications will commence shortly. Please keep scanned certificates and entrance rank cards ready.</span>
-          </motion.div>
-          <motion.h1 variants={itemVariants} className="hero-title">
-            International Integrated Bachelor's & Master's Program <span className="text-gradient"> (IIBMP)</span>
-          </motion.h1>
-          <motion.p variants={itemVariants} className="hero-subtitle">
-            A prestigious 5-year joint degree program by <strong>JNTUGV</strong> and <strong>Knowledge Foundation of Reutlingen University, Germany</strong>.
-          </motion.p>
-          <motion.div variants={itemVariants} className="hero-cta-group">
-            <Link to="/application-RUKF-IIBMP" className="btn btn-primary btn-lg">
-              Preview Application <ArrowRight size={20} />
-            </Link>
-            <a href="#details" className="btn btn-outline btn-lg" style={{ color: 'white', borderColor: 'white' }}>
-              View Details
-            </a>
-          </motion.div>
-        </motion.div>
-      </section>
+        <div className="hero-content">
+          <div className="brand-row" aria-label="University logos">
+            <img src="/jntugv-logo.png" alt="JNTUGV" />
+            <span />
+            <img src="/reutlingen-logo.png" alt="Reutlingen University" />
+          </div>
 
-      {/* Feature Cards Section */}
-      <section id="details" className="features-section">
-        <div className="container-inner">
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="section-heading"
-          >
-            Program Highlights
-          </motion.h2>
-          
-          <motion.div 
-            className="grid-cards"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={containerVariants}
-          >
-            <motion.div variants={itemVariants} className="feature-card">
-              <div className="card-icon"><Monitor size={40} color="var(--accent-blue)" /></div>
-              <h3>B.Tech (CSE) + M.Sc (PSE)</h3>
-              <p>Professional Software Engineering track focusing on modern full-stack development, cloud architecture, and AI.</p>
-            </motion.div>
-            
-            <motion.div variants={itemVariants} className="feature-card">
-              <div className="card-icon"><Cpu size={40} color="var(--accent-gold)" /></div>
-              <h3>B.Tech (ECE) + M.Sc (DBM)</h3>
-              <p>Digital Business Management track blending core electronics with global digital business strategies.</p>
-            </motion.div>
-            
-            <motion.div variants={itemVariants} className="feature-card">
-              <div className="card-icon"><Globe size={40} color="#10b981" /></div>
-              <h3>Study in Germany</h3>
-              <p>Complete your Master's degree at Reutlingen University, Germany with international exposure and opportunities.</p>
-            </motion.div>
-          </motion.div>
+          <div className="hero-badge">Applications are commencing shortly</div>
+          <h1 className="hero-title">RUKF-IIBMP Admissions 2026-27</h1>
+          <p className="hero-subtitle">
+            International Integrated Bachelor&apos;s and Master&apos;s Program offered by JNTUGV in collaboration with Knowledge Foundation of Reutlingen University, Germany.
+          </p>
+
+          <div className="notice-panel">
+            <strong>Admissions Notice</strong>
+            <span>Keep scanned certificates, entrance rank cards, Aadhaar, category certificate if applicable, photo, signature, and payment proof ready before starting the application.</span>
+          </div>
+
+          <div className="hero-cta-group">
+            <Link to="/application-RUKF-IIBMP" className="btn btn-primary btn-lg">
+              <ClipboardList size={18} />
+              Application Form
+            </Link>
+            <Link to="/status" className="btn btn-outline btn-lg">
+              <FileCheck2 size={18} />
+              Track Status
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Application Steps Section */}
+      <section id="details" className="features-section">
+        <div className="container-inner">
+          <h2 className="section-heading">Programmes Offered</h2>
+          <div className="grid-cards">
+            <div className="feature-card">
+              <div className="card-icon"><GraduationCap size={28} /></div>
+              <h3>B.Tech (CSE) + M.Sc (PSE)</h3>
+              <p>Computer Science and Engineering with Professional Software Engineering specialization.</p>
+            </div>
+
+            <div className="feature-card">
+              <div className="card-icon"><GraduationCap size={28} /></div>
+              <h3>B.Tech (ECE) + M.Sc (DBM)</h3>
+              <p>Electronics and Communication Engineering with Digital Business Management specialization.</p>
+            </div>
+
+            <div className="feature-card">
+              <div className="card-icon"><ShieldCheck size={28} /></div>
+              <h3>Office Verification</h3>
+              <p>Document preview, stage-wise review remarks, print, and PDF download are available for admissions office use.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="steps-section">
         <div className="container-inner">
           <div className="steps-layout">
-            <motion.div 
-              className="steps-info"
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <h2 className="section-heading text-left">How to Apply</h2>
-              <p className="steps-desc">The application process is completely online. Ensure you have your JEE (Mains) or TG EAPCET ranks ready.</p>
-              
+            <div className="steps-info">
+              <h2 className="section-heading text-left">Application Flow</h2>
+              <p className="steps-desc">Use a desktop or laptop for the application form so all tables, uploads, preview, and print sections remain visible.</p>
+
               <div className="timeline">
                 {[
-                  { title: "Registration & Payment", desc: "Pay the initial registration fee securely online." },
-                  { title: "Fill Application Form", desc: "Provide personal, academic, and entrance exam details." },
-                  { title: "Upload Documents", desc: "Upload scanned copies of required certificates and photos." }
+                  { title: 'Fill Application', desc: 'Enter programme, personal, academic, entrance exam, and declaration details.' },
+                  { title: 'Upload Proofs', desc: 'Attach education certificates, rank cards, category proof, Aadhaar, payment proof, photo, and signature.' },
+                  { title: 'Submit and Print', desc: 'Save the registration number, download the PDF, and print the final application.' },
                 ].map((step, index) => (
                   <div key={index} className="timeline-item">
-                    <div className="timeline-marker"><CheckCircle2 size={24} /></div>
+                    <div className="timeline-marker"><CheckCircle2 size={22} /></div>
                     <div className="timeline-content">
                       <h4>{step.title}</h4>
                       <p>{step.desc}</p>
@@ -121,16 +85,10 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </motion.div>
-            
-            <motion.div 
-              className="important-dates-card glass"
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <h3>Important Dates</h3>
+            </div>
+
+            <aside className="important-dates-card">
+              <h3><CalendarDays size={20} /> Important Dates</h3>
               <ul className="dates-list">
                 <li>
                   <span className="date-label">Last Date (No Late Fee)</span>
@@ -142,13 +100,13 @@ export default function Home() {
                 </li>
                 <li className="highlight-date">
                   <span className="date-label">Admission Counselling</span>
-                  <span className="date-value text-gradient">15.07.2026 @ 10:00 AM</span>
+                  <span className="date-value">15.07.2026 @ 10:00 AM</span>
                 </li>
               </ul>
               <div className="dates-footer">
                 <strong>Venue:</strong> Directorate of Admissions, JNTUGV, Bobbili Highway, Dwarapudi, Vizianagaram.
               </div>
-            </motion.div>
+            </aside>
           </div>
         </div>
       </section>

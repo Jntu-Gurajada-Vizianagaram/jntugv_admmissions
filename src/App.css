@@ -1,43 +1,11 @@
-/* ==============================================
-   JNTU-GV DOA – App Global CSS
-   Matches JNTU-H DOA doa.jntuh.ac.in exactly
-   ============================================== */
-
-:root {
-  --jntuh-blue: #1a4f72;      /* dark navy header/nav bg */
-  --jntuh-nav:  #1a5276;      /* nav bar */
-  --jntuh-pink: #d63384;      /* magenta/pink accent, HOME tab active, headings */
-  --jntuh-teal: #1f7391;      /* secondary link color */
-  --jntuh-light-bg: #f2f5f7;  /* page content area */
-  --jntuh-header-bg: #d6eaf8; /* top header light blue */
-  --jntuh-text: #333;
-  --jntuh-muted: #555;
-  --jntuh-border: #ccc;
-  --jntuh-red: #c0392b;
-  --jntuh-orange: #e67e22;
-  --font: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-main);
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  font-family: var(--font);
-  background: #fff;
-  color: var(--jntuh-text);
-  font-size: 14px;
-  line-height: 1.6;
+.main-content-area {
+  flex: 1;
+  width: 100%;
 }
-a { color: var(--jntuh-teal); text-decoration: none; }
-a:hover { text-decoration: underline; color: var(--jntuh-pink); }
-
-.app-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
-
-/* ---- utility ---- */
-.container { max-width: 1140px; margin: 0 auto; padding: 0 15px; }
-.float-left  { float: left; }
-.float-right { float: right; }
-.clearfix::after { content:''; display:table; clear:both; }
-.text-center { text-align: center; }
-.text-justify { text-align: justify; }
-
-strong { font-weight: bold; }

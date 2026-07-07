@@ -133,7 +133,7 @@ export default function Step6Review({ onSubmit, onBack }) {
         <button type="button" className="btn btn-outline" onClick={onBack}>Back to Edit</button>
         <button
           type="button"
-          className="btn btn-accent btn-lg shadow-glow"
+          className="btn btn-accent btn-lg"
           onClick={handleSubmit}
           disabled={!data.declaration.agreed || isSubmitting}
         >

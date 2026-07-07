@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Download, Printer, Save } from 'lucide-react';
+import { CheckCircle2, Download, Printer, Save } from 'lucide-react';
 import { useForm } from '../context/useForm';
 import { downloadApplicationPdf } from '../utils/downloadApplicationPdf';
 import ProgressBar from './ProgressBar';
@@ -60,7 +60,7 @@ export default function ApplicationForm() {
           <p>This application form and PDF preview are designed for a wider screen so all columns, uploads, and print formatting remain visible.</p>
         </div>
         <div className="form-wrapper submission-success desktop-only-application">
-          <div className="success-mark">✓</div>
+          <div className="success-mark"><CheckCircle2 size={34} /></div>
           <h2>Application Submitted</h2>
           <p>Your RUKF-IIBMP application has been saved successfully.</p>
           <div className="registration-box">
@@ -98,14 +98,14 @@ export default function ApplicationForm() {
         <p>This application form is available only on desktop or laptop screens for better visibility and accurate document verification.</p>
       </div>
       <motion.div 
-        className="form-wrapper glass desktop-only-application"
+        className="form-wrapper desktop-only-application"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
       >
         <div className="form-title-row">
           <div>
-            <h2 className="form-page-title text-gradient">RUKF-IIBMP Application Form 2026</h2>
+            <h2 className="form-page-title">RUKF-IIBMP Application Form 2026</h2>
             <p className="draft-status">{draftStatus}</p>
           </div>
           <button
