@@ -247,46 +247,6 @@
   color: white;
 }
 
-.verification-stage-notes {
-  margin-top: 10px;
-}
-
-.verification-stage-notes td:first-child {
-  width: 180px;
-  font-weight: 800;
-}
-
-.digital-signature-box {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 12px;
-  align-items: center;
-  margin-top: 10px;
-  padding: 10px;
-  border: 1px dashed #374151;
-}
-
-.digital-signature-box p {
-  margin: 4px 0 0;
-}
-
-.digital-signature-mark {
-  display: grid;
-  gap: 4px;
-  padding: 8px;
-  border: 1px solid #d1d5db;
-  text-align: center;
-}
-
-.digital-signature-mark strong {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.15em;
-}
-
-.digital-signature-mark span {
-  color: #4b5563;
-}
-
 @media print {
   html,
   body {
