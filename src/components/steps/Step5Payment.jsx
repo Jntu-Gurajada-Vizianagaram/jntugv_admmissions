@@ -1,8 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { Check, ExternalLink, Upload, X } from 'lucide-react';
+import { Check, Upload, X } from 'lucide-react';
 import { useForm } from '../../context/useForm';
 import { collectMessages, positiveAmount, required, textFormat } from '../../utils/validation';
-import { initiateBillDeskPayment } from '../../lib/api';
 import CalendarInput from '../CalendarInput';
 import './Step5Payment.css';
 import './Step3Academics.css';
@@ -11,10 +10,10 @@ const MAX_PROOF_FILE_SIZE = 2 * 1024 * 1024;
 
 const PAYMENT_FIELDS = [
   { key: 'fee', label: 'Application Fee', placeholder: '2000' },
-  { key: 'txn_ref', label: 'Transaction Reference No', placeholder: 'Transaction ID' },
+  { key: 'txn_ref', label: 'SBI Collect Reference No', placeholder: 'DU / SBI Collect Reference No' },
   { key: 'txn_date', label: 'Transaction Date', placeholder: 'YYYY-MM-DD', type: 'date' },
-  { key: 'mode', label: 'Mode of Payment', placeholder: 'UPI / Card / Net banking' },
-  { key: 'status', label: 'Status of Payment', placeholder: 'SUCCESS / PENDING' },
+  { key: 'mode', label: 'Mode of Payment', placeholder: 'SBI COLLECT' },
+  { key: 'status', label: 'Status of Payment', placeholder: 'SUCCESS' },
 ];
 
 const UPPERCASE_PAYMENT_FIELDS = new Set(['txn_ref', 'mode', 'status']);
@@ -25,6 +24,11 @@ function PaymentProofUpload({ payment, index, updatePayment }) {
   const handleFile = (event) => {
     const file = event.target.files[0];
     if (!file) return;
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      alert('Payment proof must be uploaded as a PDF receipt.');
+      event.target.value = '';
+      return;
+    }
     if (file.size > MAX_PROOF_FILE_SIZE) {
       alert('Payment proof must be less than 2MB.');
       event.target.value = '';
@@ -49,16 +53,14 @@ function PaymentProofUpload({ payment, index, updatePayment }) {
           <X size={15} />
         </button>
       )}
-      <input ref={inputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" hidden onChange={handleFile} />
+      <input ref={inputRef} type="file" accept="application/pdf,.pdf" hidden onChange={handleFile} />
     </div>
   );
 }
 
 export default function Step5Payment({ onNext, onBack }) {
   const { data, updatePayment, addPaymentRow, removePaymentRow } = useForm();
-  const [isProcessing, setIsProcessing] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
-  const [paymentMessage, setPaymentMessage] = useState('');
 
   const paymentHasValue = (payment) => (
     PAYMENT_FIELDS.some(field => String(payment[field.key] || '').trim()) || payment.proofFile
@@ -76,11 +78,11 @@ export default function Step5Payment({ onNext, onBack }) {
     activePayments.forEach((payment, index) => {
       const rowLabel = `Payment row ${data.payments.indexOf(payment) + 1 || index + 1}`;
       messages.push(positiveAmount(payment.fee, `${rowLabel} application fee`));
-      messages.push(textFormat(payment.txn_ref, `${rowLabel} transaction reference number`));
+      messages.push(textFormat(payment.txn_ref, `${rowLabel} SBI Collect reference number`));
       messages.push(required(payment.txn_date, `${rowLabel} transaction date is required.`));
       messages.push(textFormat(payment.mode, `${rowLabel} mode of payment`));
       messages.push(textFormat(payment.status, `${rowLabel} status of payment`));
-      if (!payment.proofFile) messages.push(`${rowLabel} payment proof upload is required.`);
+      if (!payment.proofFile) messages.push(`${rowLabel} SBI Collect payment receipt PDF upload is required.`);
     });
 
     if (activePayments.length > 0 && !successfulPayment) {
@@ -101,37 +103,11 @@ export default function Step5Payment({ onNext, onBack }) {
     onNext();
   };
 
-  const handlePayment = async () => {
-    setIsProcessing(true);
-    setPaymentMessage('');
-
-    try {
-      const amount = data.payments[0]?.fee || '2000';
-      const result = await initiateBillDeskPayment({
-        amount,
-        candidateName: data.personal.name,
-        email: data.personal.email,
-        mobile: data.personal.mobile,
-      });
-
-      if (result.redirectUrl) {
-        window.location.assign(result.redirectUrl);
-        return;
-      }
-
-      setPaymentMessage(result.message || 'BillDesk payment initiation response received. Please continue after payment confirmation.');
-    } catch (err) {
-      setPaymentMessage(err.message || 'Unable to initiate BillDesk payment. Please enter transaction details after completing payment.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   return (
     <div className="form-step-anim">
       <div className="step-header">
         <h3 className="step-title">Step 5: Registration Fee Payment Details</h3>
-        <p className="step-desc">Enter payment details as required in the application document.</p>
+        <p className="step-desc">Pay through SBI Collect, then enter the transaction details and upload the SBI Collect receipt as PDF.</p>
       </div>
 
       {showErrors && (
@@ -154,9 +130,14 @@ export default function Step5Payment({ onNext, onBack }) {
             <span>Candidate Name:</span>
             <span>{data.personal.name || 'Not Provided'}</span>
           </div>
-          <div className="billdesk-note">
-            <strong>Online Payment:</strong>
-            <span>Use the BillDesk button only after the university BillDesk merchant account is configured. After successful online payment, enter the transaction reference, date, mode, status, and upload the receipt.</span>
+          <div className="sbi-collect-note">
+            <strong>SBI Collect Payment Procedure</strong>
+            <ol>
+              <li>Open SBI Collect and complete the admission application fee payment using the official university payment category.</li>
+              <li>Download the SBI Collect receipt after payment completion.</li>
+              <li>Enter the SBI Collect reference number, transaction date, fee amount, payment mode, and payment status below.</li>
+              <li>Upload only the SBI Collect receipt in PDF format as payment proof.</li>
+            </ol>
           </div>
         </div>
 
@@ -166,7 +147,7 @@ export default function Step5Payment({ onNext, onBack }) {
               <tr>
                 <th>S.No</th>
                 {PAYMENT_FIELDS.map(field => <th key={field.key}>{field.label} <span className="required-star">*</span></th>)}
-                <th>Payment Proof <span className="required-star">*</span></th>
+                <th>SBI Collect Receipt PDF <span className="required-star">*</span></th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -221,18 +202,7 @@ export default function Step5Payment({ onNext, onBack }) {
 
         <div className="payment-actions-row">
           <button type="button" className="btn btn-outline" onClick={addPaymentRow}>+ Add Payment Row</button>
-          <button
-            type="button"
-            className={`btn btn-accent ${isProcessing ? 'processing' : ''}`}
-            onClick={handlePayment}
-            disabled={isProcessing}
-          >
-            <ExternalLink size={18} />
-            {isProcessing ? 'Opening BillDesk...' : 'Proceed to BillDesk Payment'}
-          </button>
         </div>
-
-        {paymentMessage && <div className="billdesk-message">{paymentMessage}</div>}
       </div>
 
       <div className="step-nav">

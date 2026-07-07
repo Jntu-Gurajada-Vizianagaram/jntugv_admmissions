@@ -45,10 +45,6 @@ const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || 'jntugv-admissions-local-
 const DEFAULT_ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@2026';
 const DEFAULT_ADMIN_NAME = process.env.ADMIN_NAME || 'Admissions Administrator';
-const BILLDESK_ENABLED = process.env.BILLDESK_ENABLED === 'true';
-const BILLDESK_PAYMENT_URL = process.env.BILLDESK_PAYMENT_URL || '';
-const BILLDESK_MERCHANT_ID = process.env.BILLDESK_MERCHANT_ID || '';
-const BILLDESK_RETURN_URL = process.env.BILLDESK_RETURN_URL || '';
 
 const IIBMP_2026_SCHEMA = {
   year: '2026',
@@ -447,10 +443,6 @@ const summarizeApplication = (record) => ({
   verifiedBy: record.verifiedBy || '',
 });
 
-const createPaymentOrderId = () => (
-  `JNTUGV-IIBMP-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`
-);
-
 const loadApplications = async (year = DEFAULT_YEAR, processCode = DEFAULT_PROCESS) => {
   await ensureProcessStore(year, processCode);
   await migrateLegacyApplications(year, processCode);
@@ -546,38 +538,6 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/schemas/2026/IIBMP') {
       await ensureProcessStore(DEFAULT_YEAR, DEFAULT_PROCESS);
       return json(res, 200, await readJson(schemaFile(DEFAULT_YEAR, DEFAULT_PROCESS), IIBMP_2026_SCHEMA));
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/payments/billdesk/initiate') {
-      const body = await readBody(req);
-      const amount = Number(body.amount);
-
-      if (!Number.isFinite(amount) || amount <= 0) {
-        return json(res, 400, { message: 'Valid payment amount is required before opening BillDesk.' });
-      }
-
-      if (!BILLDESK_ENABLED || !BILLDESK_PAYMENT_URL || !BILLDESK_MERCHANT_ID) {
-        return json(res, 503, {
-          message: 'BillDesk live payment is not configured yet. Add BillDesk merchant credentials in production environment, then restart the server.',
-        });
-      }
-
-      const orderId = createPaymentOrderId();
-      const redirectUrl = new URL(BILLDESK_PAYMENT_URL);
-      redirectUrl.searchParams.set('merchant_id', BILLDESK_MERCHANT_ID);
-      redirectUrl.searchParams.set('order_id', orderId);
-      redirectUrl.searchParams.set('amount', amount.toFixed(2));
-      if (BILLDESK_RETURN_URL) redirectUrl.searchParams.set('return_url', BILLDESK_RETURN_URL);
-      if (body.candidateName) redirectUrl.searchParams.set('customer_name', String(body.candidateName));
-      if (body.email) redirectUrl.searchParams.set('email', String(body.email));
-      if (body.mobile) redirectUrl.searchParams.set('mobile', String(body.mobile));
-
-      return json(res, 200, {
-        provider: 'BillDesk',
-        orderId,
-        redirectUrl: redirectUrl.toString(),
-        message: 'Redirecting to BillDesk payment gateway.',
-      });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/admin/login') {

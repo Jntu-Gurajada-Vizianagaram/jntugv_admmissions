@@ -6,7 +6,7 @@ Admissions portal for the JNTUGV RUKF-IIBMP 2026 application process.
 
 - React/Vite frontend for candidate application flow.
 - Node.js backend for yearly admissions schemas and application storage.
-- File upload persistence for certificates, rank cards, payment proofs, photos, and signatures.
+- File upload persistence for certificates, rank cards, SBI Collect payment receipts, photos, and signatures.
 - Admin login for admissions office users.
 - Verification officer management.
 - College-level application retrieval, document preview, verification, print, and PDF download.
@@ -102,18 +102,18 @@ Deployment templates are included:
 
 Point `admissions.jntugv.edu.in` to the server, proxy it to `127.0.0.1:5000`, then enable HTTPS using the institution SSL certificate or Certbot.
 
-## BillDesk Payment
+## SBI Collect Payment
 
-The payment step no longer creates mock transactions. To enable live BillDesk payment, add the university BillDesk merchant details in the production environment:
+Admissions fee payment is handled through SBI Collect outside the portal. Candidates must complete payment first, then enter the payment details in Step 5.
 
-```text
-BILLDESK_ENABLED=true
-BILLDESK_MERCHANT_ID=...
-BILLDESK_PAYMENT_URL=...
-BILLDESK_RETURN_URL=https://admissions.jntugv.edu.in/payment/billdesk/return
-```
+Required payment flow:
 
-BillDesk final request signing and payment-status callback verification must match the merchant integration kit issued to the university. Until those live credentials are configured, candidates can enter verified transaction details and upload payment proof manually.
+1. Open SBI Collect and pay the admission application fee under the official university payment category.
+2. Download the SBI Collect receipt after payment.
+3. Enter the fee amount, SBI Collect reference number, transaction date, mode of payment, and payment status in the portal.
+4. Upload the SBI Collect receipt as a PDF payment proof.
+
+The admissions office can verify the uploaded PDF receipt from the admin console.
 
 ## Runtime Data
 

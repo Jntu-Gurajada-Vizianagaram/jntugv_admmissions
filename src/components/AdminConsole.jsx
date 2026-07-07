@@ -87,7 +87,7 @@ function DocumentPreviews({ application }) {
 
   const paymentDocs = application.payments
     .filter(payment => payment.proofFile)
-    .map((payment, index) => ({ label: `Payment Proof ${index + 1}`, file: payment.proofFile }));
+    .map((payment, index) => ({ label: `SBI Collect Receipt ${index + 1}`, file: payment.proofFile }));
 
   const docs = [...educationDocs, ...supportingDocs, ...paymentDocs];
 

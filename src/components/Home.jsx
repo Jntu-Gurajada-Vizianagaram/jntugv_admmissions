@@ -22,7 +22,7 @@ export default function Home() {
 
           <div className="notice-panel">
             <strong>Admissions Notice</strong>
-            <span>Keep scanned certificates, entrance rank cards, Aadhaar, category certificate if applicable, photo, signature, and payment proof ready before starting the application.</span>
+            <span>Keep scanned certificates, entrance rank cards, Aadhaar, category certificate if applicable, photo, signature, and SBI Collect payment receipt PDF ready before starting the application.</span>
           </div>
 
           <div className="hero-cta-group">
@@ -73,7 +73,8 @@ export default function Home() {
               <div className="timeline">
                 {[
                   { title: 'Fill Application', desc: 'Enter programme, personal, academic, entrance exam, and declaration details.' },
-                  { title: 'Upload Proofs', desc: 'Attach education certificates, rank cards, category proof, Aadhaar, payment proof, photo, and signature.' },
+                  { title: 'Pay Through SBI Collect', desc: 'Complete fee payment in SBI Collect, enter the reference details, and upload the receipt PDF.' },
+                  { title: 'Upload Proofs', desc: 'Attach education certificates, rank cards, category proof, Aadhaar, photo, signature, and payment receipt.' },
                   { title: 'Submit and Print', desc: 'Save the registration number, download the PDF, and print the final application.' },
                 ].map((step, index) => (
                   <div key={index} className="timeline-item">

@@ -74,7 +74,7 @@ export default function PrintableApplication({ data, regNo = '', verification = 
     { title: 'Caste / Category Certificate', file: documents.doc_caste },
     { title: documents.other_doc_title || 'Other Competitive Exam Proof', file: documents.doc_others },
     ...visiblePayments.map((payment, index) => ({
-      title: `Payment Proof ${index + 1}`,
+      title: `SBI Collect Receipt ${index + 1}`,
       file: payment.proofFile,
     })),
   ].filter(document => document.file);
@@ -253,7 +253,7 @@ export default function PrintableApplication({ data, regNo = '', verification = 
       <h4 className="print-section-title">Registration Fee Payment details</h4>
       <table className="print-data-table compact-print-table">
         <thead>
-          <tr><th>S.No</th><th>Application Fee</th><th>Transaction Reference No</th><th>Transaction date</th><th>Mode of payment</th><th>Status of payment</th><th>Payment Proof</th></tr>
+          <tr><th>S.No</th><th>Application Fee</th><th>SBI Collect Reference No</th><th>Transaction date</th><th>Mode of payment</th><th>Status of payment</th><th>SBI Collect Receipt PDF</th></tr>
         </thead>
         <tbody>
           {visiblePayments.map((payment, index) => (
