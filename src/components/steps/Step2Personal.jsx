@@ -20,6 +20,9 @@ import './Step3Academics.css';
 
 const MAX_PHOTO_FILE_SIZE = 70 * 1024;
 const MAX_SIGNATURE_FILE_SIZE = 50 * 1024;
+const DOB_MIN = '1980-01-01';
+const DOB_MAX = '2010-12-31';
+const DOB_INITIAL_VIEW = '2008-01-01';
 
 const UPPERCASE_FIELDS = new Set([
   'name',
@@ -109,11 +112,13 @@ export default function Step2Personal({ onNext, onBack }) {
   );
 
   const requiresCaste = data.personal.category && data.personal.category !== 'OC';
+  const dobOutOfRange = data.personal.dob && (data.personal.dob < DOB_MIN || data.personal.dob > DOB_MAX);
   const validationMessages = () => collectMessages([
     nameFormat(data.personal.name, 'Candidate name'),
     nameFormat(data.personal.fatherName, "Father's / guardian's name"),
     nameFormat(data.personal.motherName, "Mother's name"),
     required(data.personal.dob, 'Date of birth is required.'),
+    dobOutOfRange ? 'Date of birth must be between 01-01-1980 and 31-12-2010.' : '',
     textFormat(data.personal.placeOfBirth, 'Place of birth'),
     required(data.personal.gender, 'Gender is required.'),
     required(data.personal.category, 'Category is required.'),
@@ -173,7 +178,10 @@ export default function Step2Personal({ onNext, onBack }) {
             value={data.personal.dob}
             onChange={handleChange}
             required
-            max="2026-12-31"
+            min={DOB_MIN}
+            max={DOB_MAX}
+            initialViewDate={DOB_INITIAL_VIEW}
+            showToday={false}
             gridColumn="span 1"
           />
           {renderFloatingInput('placeOfBirth', 'Place of Birth', 'text', 'span 1')}

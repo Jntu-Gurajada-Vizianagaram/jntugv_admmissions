@@ -43,13 +43,19 @@ export default function CalendarInput({
   required = false,
   min,
   max,
+  initialViewDate,
+  showToday = true,
   gridColumn,
 }) {
   const fieldRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [pickerMode, setPickerMode] = useState('days');
   const selectedDate = useMemo(() => parseDateValue(value), [value]);
-  const [viewDate, setViewDate] = useState(selectedDate || parseDateValue(max) || new Date());
+  const defaultViewDate = useMemo(
+    () => selectedDate || parseDateValue(initialViewDate) || parseDateValue(max) || new Date(),
+    [selectedDate, initialViewDate, max],
+  );
+  const [viewDate, setViewDate] = useState(defaultViewDate);
   const displayValue = useMemo(() => formatDate(value), [value]);
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -64,6 +70,10 @@ export default function CalendarInput({
   useEffect(() => {
     if (selectedDate) setViewDate(selectedDate);
   }, [selectedDate]);
+
+  useEffect(() => {
+    if (!selectedDate && isOpen) setViewDate(defaultViewDate);
+  }, [defaultViewDate, isOpen, selectedDate]);
 
   useEffect(() => {
     const handlePointerDown = (event) => {
@@ -100,6 +110,18 @@ export default function CalendarInput({
     setViewDate(prev => new Date(prev.getFullYear() + offset, prev.getMonth(), 1));
   };
 
+  const handlePrevious = () => {
+    if (pickerMode === 'days') changeMonth(-1);
+    else if (pickerMode === 'months') changeYearPage(-1);
+    else changeYearPage(-12);
+  };
+
+  const handleNext = () => {
+    if (pickerMode === 'days') changeMonth(1);
+    else if (pickerMode === 'months') changeYearPage(1);
+    else changeYearPage(12);
+  };
+
   const selectMonth = (nextMonth) => {
     setViewDate(prev => new Date(prev.getFullYear(), nextMonth, 1));
     setPickerMode('days');
@@ -114,6 +136,7 @@ export default function CalendarInput({
   const selectYear = (nextYear) => {
     if (nextYear < minYear || nextYear > maxYear) return;
     setViewDate(prev => new Date(nextYear, prev.getMonth(), 1));
+    setPickerMode('months');
   };
 
   const selectDate = (date) => {
@@ -185,17 +208,18 @@ export default function CalendarInput({
             <button
               type="button"
               className="calendar-nav-button"
-              onClick={() => (pickerMode === 'days' ? changeMonth(-1) : changeYearPage(-12))}
-              aria-label={pickerMode === 'days' ? 'Previous month' : 'Previous years'}
+              onClick={handlePrevious}
+              aria-label={pickerMode === 'days' ? 'Previous month' : 'Previous period'}
             >
               <ChevronLeft size={18} />
             </button>
             <button
               type="button"
               className="calendar-current-month"
-              onClick={() => setPickerMode(prev => (prev === 'days' ? 'monthYear' : 'days'))}
+              onPointerDown={event => event.stopPropagation()}
+              onClick={() => setPickerMode(prev => (prev === 'days' ? 'years' : 'days'))}
               aria-label="Change month and year"
-              aria-pressed={pickerMode === 'monthYear'}
+              aria-pressed={pickerMode !== 'days'}
             >
               <strong>{MONTHS[month]}</strong>
               <span>{year}</span>
@@ -203,29 +227,16 @@ export default function CalendarInput({
             <button
               type="button"
               className="calendar-nav-button"
-              onClick={() => (pickerMode === 'days' ? changeMonth(1) : changeYearPage(12))}
-              aria-label={pickerMode === 'days' ? 'Next month' : 'Next years'}
+              onClick={handleNext}
+              aria-label={pickerMode === 'days' ? 'Next month' : 'Next period'}
             >
               <ChevronRight size={18} />
             </button>
           </div>
 
-          {pickerMode === 'monthYear' ? (
+          {pickerMode === 'years' ? (
             <div className="calendar-month-year-picker">
-              <div className="calendar-month-grid" aria-label="Select month">
-                {MONTHS.map((monthName, index) => (
-                  <button
-                    key={monthName}
-                    type="button"
-                    className={`calendar-picker-button ${index === month ? 'selected' : ''}`}
-                    onClick={() => selectMonth(index)}
-                    disabled={isMonthDisabled(index)}
-                  >
-                    {monthName.slice(0, 3)}
-                  </button>
-                ))}
-              </div>
-
+              <div className="calendar-picker-title">Select year first</div>
               <div className="calendar-year-grid" aria-label="Select year">
                 {yearOptions.map(optionYear => (
                   <button
@@ -236,6 +247,23 @@ export default function CalendarInput({
                     disabled={optionYear < minYear || optionYear > maxYear}
                   >
                     {optionYear}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : pickerMode === 'months' ? (
+            <div className="calendar-month-year-picker">
+              <div className="calendar-picker-title">Select month for {year}</div>
+              <div className="calendar-month-grid" aria-label="Select month">
+                {MONTHS.map((monthName, index) => (
+                  <button
+                    key={monthName}
+                    type="button"
+                    className={`calendar-picker-button ${index === month ? 'selected' : ''}`}
+                    onClick={() => selectMonth(index)}
+                    disabled={isMonthDisabled(index)}
+                  >
+                    {monthName.slice(0, 3)}
                   </button>
                 ))}
               </div>
@@ -269,7 +297,8 @@ export default function CalendarInput({
 
           <div className="calendar-actions">
             <button type="button" onClick={() => emitChange('')}>Clear</button>
-            <button type="button" onClick={selectToday}>Today</button>
+            {showToday && <button type="button" onClick={selectToday}>Today</button>}
+            {!showToday && <span>Select month/year above</span>}
           </div>
         </div>
       )}
