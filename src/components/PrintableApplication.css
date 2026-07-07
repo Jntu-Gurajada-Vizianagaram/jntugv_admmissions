@@ -126,6 +126,16 @@
   border-color: #9ca3af;
 }
 
+.exam-details-table td:first-child {
+  width: clamp(170px, 24vw, 260px);
+  font-weight: 700;
+}
+
+.exam-details-table td:nth-child(2) {
+  width: 22px;
+  text-align: center;
+}
+
 .print-section-title {
   margin: 10px 0 5px;
   text-align: center;

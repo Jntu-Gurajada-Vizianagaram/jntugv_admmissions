@@ -131,8 +131,10 @@ export default function PrintableApplication({ data, regNo = '', verification = 
           </InfoRow>
           <tr>
             <td className="print-no">3</td>
-            <td colSpan="3">
-              <table className="nested-print-table">
+            <td className="print-label">Competitive Examination Details</td>
+            <td className="print-colon">:</td>
+            <td>
+              <table className="nested-print-table exam-details-table">
                 <tbody>
                   {programme.eligibility.map(key => (
                     <React.Fragment key={key}>
