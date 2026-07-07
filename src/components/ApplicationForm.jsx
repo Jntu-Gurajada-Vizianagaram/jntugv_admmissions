@@ -93,6 +93,27 @@ export default function ApplicationForm() {
 
   return (
     <div className="application-container">
+      <section className="application-notice-page">
+        <div className="application-brand-row" aria-label="University logos">
+          <div>
+            <img src="/jntugv-logo.png" alt="JNTUGV" />
+            <span>JNTUGV</span>
+          </div>
+          <div>
+            <img src="/reutlingen-logo.png" alt="Reutlingen University" />
+            <span>Reutlingen University</span>
+          </div>
+        </div>
+        <div className="application-status-badge">Applications are commencing shortly</div>
+        <h1>RUKF-IIBMP Admissions 2026-27</h1>
+        <p>
+          International Integrated Bachelor&apos;s and Master&apos;s Program offered by JNTUGV in collaboration with Knowledge Foundation of Reutlingen University, Germany.
+        </p>
+        <div className="application-notice-panel">
+          <strong>Admissions Notice</strong>
+          <span>Keep scanned certificates, entrance rank cards, Aadhaar, category certificate if applicable, photo, signature, and SBI Collect payment receipt PDF ready before starting the application.</span>
+        </div>
+      </section>
       <div className="application-device-block">
         <h2>Open on Desktop or Laptop</h2>
         <p>This application form is available only on desktop or laptop screens for better visibility and accurate document verification.</p>
