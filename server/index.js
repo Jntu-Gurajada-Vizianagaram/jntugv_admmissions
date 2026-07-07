@@ -7,7 +7,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.resolve(__dirname, '..');
+const STATIC_DIR = path.join(ROOT_DIR, 'dist');
 const PORT = Number(process.env.PORT || 5000);
+const PUBLIC_ORIGIN = process.env.PUBLIC_ORIGIN || '*';
 const DATA_DIR = path.join(__dirname, 'data');
 const ADMISSIONS_DIR = path.join(DATA_DIR, 'admissions');
 const LEGACY_APPLICATIONS_FILE = path.join(DATA_DIR, 'applications.json');
@@ -46,19 +49,29 @@ const IIBMP_2026_SCHEMA = {
 };
 
 const contentTypes = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
   '.pdf': 'application/pdf',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.webp': 'image/webp',
   '.json': 'application/json',
 };
+
+const commonHeaders = () => ({
+  'Access-Control-Allow-Origin': PUBLIC_ORIGIN,
+  'Access-Control-Allow-Methods': 'GET,POST,PATCH,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+});
 
 const json = (res, statusCode, payload) => {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,PATCH,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    ...commonHeaders(),
   });
   res.end(JSON.stringify(payload));
 };
@@ -414,9 +427,43 @@ const serveStoredFile = async (req, res, match) => {
 
   res.writeHead(200, {
     'Content-Type': contentTypes[ext] || 'application/octet-stream',
-    'Access-Control-Allow-Origin': '*',
+    ...commonHeaders(),
   });
   createReadStream(resolved).on('error', () => res.destroy()).pipe(res);
+};
+
+const serveStaticFile = async (res, filePath) => {
+  const resolved = path.resolve(filePath);
+  const allowedRoot = path.resolve(STATIC_DIR);
+
+  if (!resolved.startsWith(allowedRoot)) {
+    return json(res, 403, { message: 'Forbidden' });
+  }
+
+  try {
+    await access(resolved);
+  } catch {
+    return json(res, 404, { message: 'File not found' });
+  }
+
+  const ext = path.extname(resolved).toLowerCase();
+  res.writeHead(200, {
+    'Content-Type': contentTypes[ext] || 'application/octet-stream',
+    ...commonHeaders(),
+  });
+  createReadStream(resolved).on('error', () => res.destroy()).pipe(res);
+};
+
+const serveFrontend = async (url, res) => {
+  const requestedPath = decodeURIComponent(url.pathname);
+  const assetPath = path.join(STATIC_DIR, requestedPath === '/' ? 'index.html' : requestedPath);
+
+  try {
+    await access(assetPath);
+    return serveStaticFile(res, assetPath);
+  } catch {
+    return serveStaticFile(res, path.join(STATIC_DIR, 'index.html'));
+  }
 };
 
 const server = createServer(async (req, res) => {
@@ -638,6 +685,14 @@ const server = createServer(async (req, res) => {
       return serveStoredFile(req, res, fileMatch);
     }
 
+    if (url.pathname.startsWith('/api')) {
+      return json(res, 404, { message: 'Route not found' });
+    }
+
+    if (req.method === 'GET') {
+      return serveFrontend(url, res);
+    }
+
     return json(res, 404, { message: 'Route not found' });
   } catch (error) {
     return json(res, error.statusCode || 500, { message: error.message || 'Server error' });
@@ -647,5 +702,5 @@ const server = createServer(async (req, res) => {
 await ensureProcessStore(DEFAULT_YEAR, DEFAULT_PROCESS);
 
 server.listen(PORT, () => {
-  console.log(`JNTUGV admissions API running at http://localhost:${PORT}`);
+  console.log(`JNTUGV admissions portal running at http://localhost:${PORT}`);
 });

@@ -62,8 +62,47 @@ Change or disable this account from the admin console before production use.
 ```bash
 npm run build
 npm run lint
+npm start
 ```
+
+## Production Deployment
+
+The production domain is expected to be:
+
+```text
+https://admissions.jntugv.edu.in
+```
+
+Build the frontend and serve the complete portal from the Node backend:
+
+```bash
+npm ci
+npm run build
+npm start
+```
+
+Use `.env.production.example` as the template for the server environment. In production, set a strong unique `ADMIN_TOKEN_SECRET`, keep `PORT=5000`, and set:
+
+```text
+PUBLIC_ORIGIN=https://admissions.jntugv.edu.in
+```
+
+Recommended server layout:
+
+```text
+/var/www/jntugv-admissions      application code
+/etc/jntugv-admissions.env      production environment variables
+```
+
+Deployment templates are included:
+
+- `deploy/jntugv-admissions.service` for systemd.
+- `deploy/nginx-admissions.jntugv.edu.in.conf` for Nginx reverse proxy.
+
+Point `admissions.jntugv.edu.in` to the server, proxy it to `127.0.0.1:5000`, then enable HTTPS using the institution SSL certificate or Certbot.
 
 ## Runtime Data
 
 Runtime application data, uploaded files, and admin user credentials are intentionally ignored by Git. Yearly schema files, such as `server/data/admissions/2026/IIBMP/schema.json`, remain source-controlled.
+
+Back up `server/data/` regularly in production. It contains submitted applications, uploaded documents, verification users, and review status records.

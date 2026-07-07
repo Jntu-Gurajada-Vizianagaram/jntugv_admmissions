@@ -1,0 +1,16 @@
+[Unit]
+Description=JNTUGV Admissions Portal
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/jntugv-admissions
+EnvironmentFile=/etc/jntugv-admissions.env
+ExecStart=/usr/bin/node server/index.js
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target
