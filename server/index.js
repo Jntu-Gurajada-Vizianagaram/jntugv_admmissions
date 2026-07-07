@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { createReadStream } from 'node:fs';
+import { createReadStream, readFileSync } from 'node:fs';
 import { access } from 'node:fs/promises';
 import crypto from 'node:crypto';
 import path from 'node:path';
@@ -8,6 +8,28 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '..');
+
+const loadDotEnv = (filePath) => {
+  try {
+    const content = readFileSync(filePath, 'utf8');
+    for (const line of content.split(/\r?\n/u)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) continue;
+      const [key, ...valueParts] = trimmed.split('=');
+      const name = key.trim();
+      const rawValue = valueParts.join('=').trim();
+      const value = rawValue.replace(/^['"]|['"]$/g, '');
+      if (name && process.env[name] === undefined) {
+        process.env[name] = value;
+      }
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+};
+
+loadDotEnv(path.join(ROOT_DIR, '.env'));
+
 const STATIC_DIR = path.join(ROOT_DIR, 'dist');
 const PORT = Number(process.env.PORT || 5000);
 const PUBLIC_ORIGIN = process.env.PUBLIC_ORIGIN || '*';
@@ -20,6 +42,9 @@ const DEFAULT_PROCESS = 'IIBMP';
 const MAX_BODY_SIZE = 120_000_000;
 const VERIFICATION_STAGES = ['Submitted', 'Under Review', 'Verified', 'Needs Correction', 'Rejected'];
 const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || 'jntugv-admissions-local-secret';
+const DEFAULT_ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@2026';
+const DEFAULT_ADMIN_NAME = process.env.ADMIN_NAME || 'Admissions Administrator';
 
 const IIBMP_2026_SCHEMA = {
   year: '2026',
@@ -144,11 +169,11 @@ const verifyPassword = (password, user) => {
 };
 
 const defaultAdminUsers = () => {
-  const password = hashPassword('Admin@2026');
+  const password = hashPassword(DEFAULT_ADMIN_PASSWORD);
   return [{
     id: 'admin',
-    username: 'admin',
-    name: 'Admissions Administrator',
+    username: DEFAULT_ADMIN_USERNAME,
+    name: DEFAULT_ADMIN_NAME,
     role: 'admin',
     active: true,
     salt: password.salt,
@@ -157,9 +182,41 @@ const defaultAdminUsers = () => {
   }];
 };
 
+const syncEnvAdminUser = async (users) => {
+  if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) return users;
+
+  const normalizedUsername = DEFAULT_ADMIN_USERNAME.toLowerCase();
+  const existing = users.find(user => user.id === 'admin')
+    || users.find(user => String(user.username || '').toLowerCase() === normalizedUsername);
+
+  if (existing) {
+    existing.id = 'admin';
+    existing.username = DEFAULT_ADMIN_USERNAME;
+    existing.name = DEFAULT_ADMIN_NAME;
+    existing.role = 'admin';
+    existing.active = true;
+    if (!verifyPassword(DEFAULT_ADMIN_PASSWORD, existing)) {
+      const password = hashPassword(DEFAULT_ADMIN_PASSWORD);
+      existing.salt = password.salt;
+      existing.passwordHash = password.hash;
+    }
+    return users;
+  }
+
+  return [...users, defaultAdminUsers()[0]];
+};
+
 const loadAdminUsers = async () => {
   const users = await readJson(ADMIN_USERS_FILE, null);
-  if (users) return users;
+  if (users) {
+    const normalizedUsers = Array.isArray(users) ? users : [users].filter(Boolean);
+    const beforeSync = JSON.stringify(normalizedUsers);
+    const syncedUsers = await syncEnvAdminUser(normalizedUsers);
+    if (JSON.stringify(syncedUsers) !== beforeSync) {
+      await writeJson(ADMIN_USERS_FILE, syncedUsers);
+    }
+    return syncedUsers;
+  }
   const initialUsers = defaultAdminUsers();
   await writeJson(ADMIN_USERS_FILE, initialUsers);
   return initialUsers;

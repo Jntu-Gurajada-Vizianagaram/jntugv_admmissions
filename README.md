@@ -48,14 +48,15 @@ Default local URLs:
 
 ## Admin Login
 
-On first backend start, a default admin account is created in local runtime data.
+On first backend start, a default admin account is created in local runtime data from environment variables.
 
 ```text
-Username: admin
-Password: Admin@2026
+ADMIN_USERNAME=da@jntugv.edu.in
+ADMIN_PASSWORD=use-a-strong-secret-password
+ADMIN_NAME=Director of Admissions
 ```
 
-Change or disable this account from the admin console before production use.
+Set these values in `.env` for local use and in `/etc/jntugv-admissions.env` for production. The runtime `server/data/admin-users.json` file stores only the password hash.
 
 ## Useful Commands
 
