@@ -80,7 +80,7 @@ export default function ApplicationForm() {
               <Download size={18} />
               {isDownloading ? 'Preparing PDF...' : 'Download PDF'}
             </button>
-            <Link to={`/status?reg=${encodeURIComponent(regNo)}`} className="btn btn-primary">Track Status</Link>
+            <Link to={`/candidate-login?reg=${encodeURIComponent(regNo)}`} className="btn btn-primary">Submitted Login</Link>
             <button type="button" className="btn btn-outline" onClick={resetForm}>New Application</button>
           </div>
           <div className="submitted-print-preview">

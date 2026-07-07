@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, CheckCircle2, ClipboardList, FileCheck2, GraduationCap, LogIn, ShieldCheck } from 'lucide-react';
+import { CalendarDays, CheckCircle2, ClipboardList, GraduationCap, LogIn, ShieldCheck } from 'lucide-react';
 import './Home.css';
 
 export default function Home() {
@@ -39,10 +39,6 @@ export default function Home() {
             <Link to="/candidate-login" className="btn btn-accent btn-lg">
               <LogIn size={18} />
               Submitted Application Login
-            </Link>
-            <Link to="/status" className="btn btn-outline btn-lg">
-              <FileCheck2 size={18} />
-              Track Status
             </Link>
           </div>
         </div>

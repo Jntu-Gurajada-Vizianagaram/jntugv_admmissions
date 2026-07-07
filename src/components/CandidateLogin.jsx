@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { LogIn, Search } from 'lucide-react';
 import { getApplicationStatus } from '../lib/api';
 import CandidateStatusCard from './CandidateStatusCard';
 import './CandidateLogin.css';
 
 export default function CandidateLogin() {
-  const [registrationNo, setRegistrationNo] = useState('');
+  const [searchParams] = useSearchParams();
+  const [registrationNo, setRegistrationNo] = useState((searchParams.get('reg') || '').toUpperCase());
   const [application, setApplication] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (event) => {
+  const handleLogin = useCallback(async (event) => {
     event.preventDefault();
     if (!registrationNo.trim()) return;
 
@@ -27,7 +28,12 @@ export default function CandidateLogin() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [registrationNo]);
+
+  useEffect(() => {
+    const reg = searchParams.get('reg');
+    if (reg) handleLogin({ preventDefault: () => {} });
+  }, [handleLogin, searchParams]);
 
   return (
     <div className="candidate-login-page">
@@ -61,12 +67,6 @@ export default function CandidateLogin() {
           <Link to="/application-RUKF-IIBMP" className="btn btn-accent">
             <Search size={18} />
             New Candidate: Start Application
-          </Link>
-          <Link
-            to={application?.registrationNo ? `/status?reg=${encodeURIComponent(application.registrationNo)}` : '/status'}
-            className="btn btn-outline"
-          >
-            Track by Status Page
           </Link>
         </div>
       </section>
