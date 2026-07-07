@@ -14,8 +14,11 @@ import {
 import PrintableApplication from './PrintableApplication';
 import './AdminConsole.css';
 
-const STATUSES = ['Submitted', 'Under Review', 'Verified', 'Needs Correction', 'Rejected'];
+const STATUSES = ['Submitted', 'Under Review / Verification in Progress', 'Verified', 'Needs Correction', 'Rejected'];
 const emptyStageNotes = () => Object.fromEntries(STATUSES.map(status => [status, '']));
+const normalizeStatus = (status = 'Submitted') => (
+  status === 'Under Review' ? 'Under Review / Verification in Progress' : status
+);
 
 function UploadedDocumentPreview({ item }) {
   const [blobUrl, setBlobUrl] = useState('');
@@ -110,6 +113,7 @@ export default function AdminConsole() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [reviewStatus, setReviewStatus] = useState('Submitted');
+  const [assignedOfficerId, setAssignedOfficerId] = useState('');
   const [verifiedBy, setVerifiedBy] = useState('');
   const [verificationNotes, setVerificationNotes] = useState('');
   const [verificationStages, setVerificationStages] = useState(emptyStageNotes);
@@ -120,6 +124,7 @@ export default function AdminConsole() {
 
   const selectedApplication = selected?.application;
   const currentVerifierName = adminUser?.name || adminUser?.username || '';
+  const activeVerificationOfficers = officers.filter(officer => officer.active && officer.role === 'officer');
 
   const loadOfficers = useCallback(async () => {
     if (adminUser?.role !== 'admin') return;
@@ -167,11 +172,20 @@ export default function AdminConsole() {
     setError('');
     try {
       const record = await getAdminApplication(registrationNo);
-      setSelected(record);
-      setReviewStatus(record.status);
+      const normalizedStatus = normalizeStatus(record.status);
+      const normalizedStages = {
+        ...emptyStageNotes(),
+        ...(record.verificationStages || {}),
+      };
+      if (record.verificationStages?.['Under Review'] && !normalizedStages['Under Review / Verification in Progress']) {
+        normalizedStages['Under Review / Verification in Progress'] = record.verificationStages['Under Review'];
+      }
+      setSelected({ ...record, status: normalizedStatus });
+      setReviewStatus(normalizedStatus);
+      setAssignedOfficerId(record.assignedOfficerId || '');
       setVerifiedBy(record.verifiedBy || currentVerifierName);
       setVerificationNotes(record.verificationNotes || '');
-      setVerificationStages({ ...emptyStageNotes(), ...(record.verificationStages || {}) });
+      setVerificationStages(normalizedStages);
     } catch (err) {
       setError(err.message || 'Unable to open application');
     } finally {
@@ -187,11 +201,13 @@ export default function AdminConsole() {
       const verifierName = verifiedBy.trim() || currentVerifierName;
       const record = await updateAdminApplication(selected.registrationNo, {
         status: reviewStatus,
+        ...(adminUser.role === 'admin' ? { assignedOfficerId } : {}),
         verifiedBy: verifierName,
         verificationNotes,
         verificationStages,
       });
       setSelected(record);
+      setAssignedOfficerId(record.assignedOfficerId || '');
       setVerifiedBy(record.verifiedBy || verifierName);
       await loadRecords();
     } catch (err) {
@@ -234,7 +250,7 @@ export default function AdminConsole() {
   const counts = useMemo(() => ({
     total: records.length,
     verified: records.filter(record => record.status === 'Verified').length,
-    pending: records.filter(record => ['Submitted', 'Under Review'].includes(record.status)).length,
+    pending: records.filter(record => ['Submitted', 'Under Review', 'Under Review / Verification in Progress'].includes(record.status)).length,
   }), [records]);
 
   if (!adminUser) {
@@ -339,7 +355,7 @@ export default function AdminConsole() {
               >
                 <span>{record.registrationNo}</span>
                 <strong>{record.candidateName || 'Unnamed Candidate'}</strong>
-                <small>{record.status} | {record.mobile || 'No mobile'}</small>
+                <small>{record.status} | {record.assignedOfficerName || 'Unassigned'} | {record.mobile || 'No mobile'}</small>
               </button>
             ))}
             {!records.length && !loading && <div className="admin-empty">No applications found.</div>}
@@ -375,6 +391,17 @@ export default function AdminConsole() {
                     {STATUSES.map(item => <option key={item} value={item}>{item}</option>)}
                   </select>
                 </label>
+                {adminUser.role === 'admin' && (
+                  <label>
+                    Assigned Officer
+                    <select value={assignedOfficerId} onChange={(event) => setAssignedOfficerId(event.target.value)}>
+                      <option value="">Unassigned</option>
+                      {activeVerificationOfficers.map(officer => (
+                        <option key={officer.id} value={officer.id}>{officer.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <label>
                   Verified By
                   <input value={verifiedBy} onChange={(event) => setVerifiedBy(event.target.value)} placeholder="Officer name" />
@@ -416,6 +443,7 @@ export default function AdminConsole() {
                   submittedAt: selected.submittedAt,
                   verifiedAt: selected.verifiedAt,
                   verifiedBy: selected.verifiedBy,
+                  assignedOfficerName: selected.assignedOfficerName,
                   verificationNotes: selected.verificationNotes,
                   verificationStages: selected.verificationStages,
                 }}

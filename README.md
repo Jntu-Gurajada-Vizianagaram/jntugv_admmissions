@@ -115,6 +115,16 @@ Required payment flow:
 
 The admissions office can verify the uploaded PDF receipt from the admin console.
 
+## Verification Workflow
+
+Admissions verification follows this office flow:
+
+```text
+Submitted -> Under Review / Verification in Progress -> Verified / Needs Correction / Rejected
+```
+
+Director / Convenor admin users can assign each submitted application to a specific active verification officer. Verification officers see only the applications assigned to them.
+
 ## Runtime Data
 
 Runtime application data, uploaded files, and admin user credentials are intentionally ignored by Git. Yearly schema files, such as `server/data/admissions/2026/IIBMP/schema.json`, remain source-controlled.

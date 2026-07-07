@@ -40,7 +40,8 @@ const ADMIN_USERS_FILE = path.join(DATA_DIR, 'admin-users.json');
 const DEFAULT_YEAR = '2026';
 const DEFAULT_PROCESS = 'IIBMP';
 const MAX_BODY_SIZE = 120_000_000;
-const VERIFICATION_STAGES = ['Submitted', 'Under Review', 'Verified', 'Needs Correction', 'Rejected'];
+const IN_PROGRESS_STATUS = 'Under Review / Verification in Progress';
+const VERIFICATION_STAGES = ['Submitted', IN_PROGRESS_STATUS, 'Verified', 'Needs Correction', 'Rejected'];
 const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || 'jntugv-admissions-local-secret';
 const DEFAULT_ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@2026';
@@ -152,6 +153,10 @@ const readJson = async (filePath, fallback) => {
     throw error;
   }
 };
+
+const normalizeStatus = (status = 'Submitted') => (
+  status === 'Under Review' ? IN_PROGRESS_STATUS : status
+);
 
 const writeJson = async (filePath, payload) => {
   await mkdir(path.dirname(filePath), { recursive: true });
@@ -279,18 +284,21 @@ const requireSuperAdmin = async (req, res) => {
 const normalizeLegacyRecord = (record) => {
   const year = record.year || DEFAULT_YEAR;
   const processCode = record.processCode || DEFAULT_PROCESS;
+  const status = normalizeStatus(record.status || 'Submitted');
   return {
     id: record.id || record.registrationNo,
     year,
     processCode,
     schemaVersion: record.schemaVersion || `${processCode}-${year}`,
     registrationNo: record.registrationNo,
-    status: record.status || 'Submitted',
+    status,
     submittedAt: record.submittedAt || new Date().toISOString(),
     verificationNotes: record.verificationNotes || '',
     verificationStages: record.verificationStages || {},
     verifiedBy: record.verifiedBy || '',
     verifiedAt: record.verifiedAt || '',
+    assignedOfficerId: record.assignedOfficerId || '',
+    assignedOfficerName: record.assignedOfficerName || '',
     application: record.application || {},
   };
 };
@@ -432,7 +440,7 @@ const summarizeApplication = (record) => ({
   year: record.year,
   processCode: record.processCode,
   registrationNo: record.registrationNo,
-  status: record.status,
+  status: normalizeStatus(record.status),
   candidateName: record.application?.personal?.name || '',
   mobile: record.application?.personal?.mobile || '',
   email: record.application?.personal?.email || '',
@@ -441,6 +449,8 @@ const summarizeApplication = (record) => ({
   submittedAt: record.submittedAt,
   verifiedAt: record.verifiedAt || '',
   verifiedBy: record.verifiedBy || '',
+  assignedOfficerId: record.assignedOfficerId || '',
+  assignedOfficerName: record.assignedOfficerName || '',
 });
 
 const loadApplications = async (year = DEFAULT_YEAR, processCode = DEFAULT_PROCESS) => {
@@ -656,6 +666,8 @@ const server = createServer(async (req, res) => {
         verificationStages: {},
         verifiedBy: '',
         verifiedAt: '',
+        assignedOfficerId: '',
+        assignedOfficerName: '',
         application,
       };
 
@@ -673,7 +685,8 @@ const server = createServer(async (req, res) => {
       const status = url.searchParams.get('status') || '';
       const records = await loadApplications(year, processCode);
       const filtered = records
-        .filter(record => !status || record.status === status)
+        .filter(record => adminUser.role === 'admin' || record.assignedOfficerId === adminUser.id)
+        .filter(record => !status || normalizeStatus(record.status) === status)
         .filter(record => {
           if (!search) return true;
           return [
@@ -699,13 +712,40 @@ const server = createServer(async (req, res) => {
         return json(res, 404, { message: 'Application not found' });
       }
 
+      if (adminUser.role !== 'admin' && record.assignedOfficerId !== adminUser.id) {
+        return json(res, 403, { message: 'Application is not assigned to this verification officer' });
+      }
+
       if (req.method === 'GET') {
+        record.status = normalizeStatus(record.status);
         return json(res, 200, record);
       }
 
       if (req.method === 'PATCH') {
         const body = await readBody(req);
-        const nextStatus = body.status || record.status;
+        const nextStatus = normalizeStatus(body.status || record.status);
+        const assignment = {};
+
+        if (Object.prototype.hasOwnProperty.call(body, 'assignedOfficerId')) {
+          if (adminUser.role !== 'admin') {
+            return json(res, 403, { message: 'Only Director / Convenor admin can assign applications to officers' });
+          }
+
+          const assignedOfficerId = String(body.assignedOfficerId || '');
+          if (assignedOfficerId) {
+            const users = await loadAdminUsers();
+            const officer = users.find(user => user.id === assignedOfficerId && user.active && user.role === 'officer');
+            if (!officer) {
+              return json(res, 400, { message: 'Selected verification officer is not active or does not exist' });
+            }
+            assignment.assignedOfficerId = officer.id;
+            assignment.assignedOfficerName = officer.name;
+          } else {
+            assignment.assignedOfficerId = '';
+            assignment.assignedOfficerName = '';
+          }
+        }
+
         Object.assign(record, {
           status: nextStatus,
           verificationNotes: body.verificationNotes ?? record.verificationNotes,
@@ -719,6 +759,7 @@ const server = createServer(async (req, res) => {
           verifiedAt: ['Verified', 'Rejected', 'Needs Correction'].includes(nextStatus)
             ? new Date().toISOString()
             : record.verifiedAt,
+          ...assignment,
         });
         await saveApplications(records, year, processCode);
         return json(res, 200, record);

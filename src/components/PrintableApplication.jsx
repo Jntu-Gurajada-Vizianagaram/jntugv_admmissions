@@ -7,7 +7,7 @@ const EXAM_LABELS = {
   jee: 'JEE (MAINS)',
   others: 'Others',
 };
-const VERIFICATION_STAGES = ['Submitted', 'Under Review', 'Verified', 'Needs Correction', 'Rejected'];
+const VERIFICATION_STAGES = ['Submitted', 'Under Review / Verification in Progress', 'Verified', 'Needs Correction', 'Rejected'];
 
 const value = (text) => text || '';
 const uploaded = (file) => (file ? 'Uploaded' : 'Pending');
@@ -78,7 +78,9 @@ export default function PrintableApplication({ data, regNo = '', verification = 
       file: payment.proofFile,
     })),
   ].filter(document => document.file);
-  const selectedVerificationStage = verification?.status || 'Submitted';
+  const selectedVerificationStage = verification?.status === 'Under Review'
+    ? 'Under Review / Verification in Progress'
+    : verification?.status || 'Submitted';
   const selectedStageIndex = Math.max(VERIFICATION_STAGES.indexOf(selectedVerificationStage), 0);
   const visibleStageRemarks = verification
     ? [{
@@ -295,6 +297,10 @@ export default function PrintableApplication({ data, regNo = '', verification = 
                 <td>{verification.status || 'Submitted'}</td>
                 <th>Verified By</th>
                 <td>{verification.verifiedBy || 'Pending'}</td>
+              </tr>
+              <tr>
+                <th>Assigned Officer</th>
+                <td colSpan="3">{verification.assignedOfficerName || 'Unassigned'}</td>
               </tr>
               <tr>
                 <th>Submitted At</th>
