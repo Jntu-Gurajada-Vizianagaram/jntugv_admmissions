@@ -13,7 +13,7 @@
 
 .print-header {
   display: grid;
-  grid-template-columns: clamp(70px, 6vw, 92px) minmax(0, 1fr) clamp(130px, 12vw, 170px);
+  grid-template-columns: clamp(72px, 8vw, 112px) minmax(0, 1fr) clamp(72px, 8vw, 112px);
   align-items: center;
   gap: clamp(8px, 1vw, 12px);
   margin-bottom: 10px;
@@ -22,6 +22,7 @@
 
 .print-logo {
   object-fit: contain;
+  justify-self: center;
 }
 
 .print-logo-left {
@@ -30,7 +31,7 @@
 }
 
 .print-logo-right {
-  width: clamp(128px, 11vw, 165px);
+  width: clamp(70px, 7.5vw, 106px);
   max-height: 64px;
 }
 
@@ -320,16 +321,17 @@
 
 @media (max-width: 760px) {
   .print-header {
-    grid-template-columns: 70px minmax(0, 1fr);
+    grid-template-columns: 64px minmax(0, 1fr) 64px;
+    gap: 6px;
   }
 
   .print-logo-left {
-    width: 62px;
-    height: 62px;
+    width: 56px;
+    height: 56px;
   }
 
   .print-logo-right {
-    grid-column: 1 / -1;
-    justify-self: center;
+    width: 62px;
+    max-height: 52px;
   }
 }
