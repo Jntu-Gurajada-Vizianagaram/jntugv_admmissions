@@ -40,7 +40,7 @@ export default function StatusPage() {
         <div>
           <p className="page-kicker">Application Tracking</p>
           <h2>Check Your Application Status</h2>
-          <p className="status-copy">Use the registration number generated after final submission.</p>
+          <p className="status-copy">Use the registration number generated only after complete final submission. If you have not submitted yet, start the application first.</p>
         </div>
 
         <form className="status-form" onSubmit={lookup}>
@@ -51,7 +51,7 @@ export default function StatusPage() {
               value={registrationNo}
               onChange={(event) => setRegistrationNo(event.target.value.toUpperCase())}
             />
-            <label className="form-label-floating">Registration Number</label>
+            <label className="form-label-floating">Submitted Application Registration Number</label>
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>
             <Search size={18} />
@@ -63,7 +63,7 @@ export default function StatusPage() {
 
         <CandidateStatusCard application={status} />
 
-        <Link to="/application-RUKF-IIBMP" className="status-link">Start a new application</Link>
+        <Link to="/application-RUKF-IIBMP" className="status-link">New candidate: start application</Link>
       </section>
     </div>
   );

@@ -33,14 +33,14 @@ export default function CandidateLogin() {
     <div className="candidate-login-page">
       <section className="candidate-login-panel">
         <div className="candidate-login-copy">
-          <p className="page-kicker">Candidate Login</p>
+          <p className="page-kicker">Submitted Application Login</p>
           <h2>RUKF-IIBMP Admissions 2026-27</h2>
-          <p>Use your application registration number to view the submitted application status and admissions office verification progress.</p>
+          <p>Application registration number is generated only after final submission. New candidates should start the application first; submitted candidates can use the generated number to view status and verification progress.</p>
         </div>
 
         <form className="candidate-login-form" onSubmit={handleLogin}>
           <label>
-            Application Registration Number
+            Submitted Application Registration Number
             <input
               value={registrationNo}
               onChange={(event) => setRegistrationNo(event.target.value.toUpperCase())}
@@ -49,7 +49,7 @@ export default function CandidateLogin() {
           </label>
           <button type="submit" className="btn btn-primary" disabled={loading}>
             <LogIn size={18} />
-            {loading ? 'Checking...' : 'Login'}
+            {loading ? 'Checking...' : 'View Submitted Application'}
           </button>
         </form>
 
@@ -60,7 +60,7 @@ export default function CandidateLogin() {
         <div className="candidate-login-actions">
           <Link to="/application-RUKF-IIBMP" className="btn btn-accent">
             <Search size={18} />
-            Start Application
+            New Candidate: Start Application
           </Link>
           <Link
             to={application?.registrationNo ? `/status?reg=${encodeURIComponent(application.registrationNo)}` : '/status'}

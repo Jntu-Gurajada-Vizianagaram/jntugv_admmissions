@@ -38,7 +38,7 @@ export default function Home() {
           <div className="hero-cta-group">
             <Link to="/candidate-login" className="btn btn-accent btn-lg">
               <LogIn size={18} />
-              Candidate Login
+              Submitted Application Login
             </Link>
             <Link to="/status" className="btn btn-outline btn-lg">
               <FileCheck2 size={18} />
