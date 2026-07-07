@@ -107,7 +107,7 @@ export default function PrintableApplication({ data, regNo = '', verification = 
       <table className="print-meta-table">
         <tbody>
           <tr>
-            <td>
+            <td className="print-meta-highlight">
               <strong>Application Registration No:</strong>
               <span>{regNo}</span>
             </td>
@@ -116,7 +116,7 @@ export default function PrintableApplication({ data, regNo = '', verification = 
             </td>
           </tr>
           <tr>
-            <td><strong>Year of Admission:</strong> 2026</td>
+            <td className="print-meta-highlight"><strong>Year of Admission:</strong> 2026</td>
           </tr>
         </tbody>
       </table>
