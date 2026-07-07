@@ -52,8 +52,8 @@
 .print-header h3 {
   margin: 0 0 8px;
   padding: 5px;
-  border: 1px solid #111827;
   font-size: clamp(11px, 0.95vw, 15px);
+  text-transform: uppercase;
 }
 
 .print-header p {
