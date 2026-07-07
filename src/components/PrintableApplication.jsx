@@ -7,7 +7,8 @@ const EXAM_LABELS = {
   jee: 'JEE (MAINS)',
   others: 'Others',
 };
-const VERIFICATION_STAGES = ['Submitted', 'Under Review / Verification in Progress', 'Verified', 'Needs Correction', 'Rejected'];
+const IN_PROGRESS_STATUS = 'Under Review / Verification in Progress';
+const FINAL_STATUSES = ['Verified', 'Needs Correction', 'Rejected'];
 
 const value = (text) => text || '';
 const uploaded = (file) => (file ? 'Uploaded' : 'Pending');
@@ -29,6 +30,21 @@ function InfoRow({ no, label, children }) {
     </tr>
   );
 }
+
+const formatDateTime = (text) => {
+  if (!text) return '';
+  return new Intl.DateTimeFormat('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(text));
+};
+
+const normalizeVerificationStatus = (status = 'Submitted') => (
+  status === 'Under Review' ? IN_PROGRESS_STATUS : status
+);
 
 export default function PrintableApplication({ data, regNo = '', verification = null }) {
   const { programme, personal, education, documents, payments, declaration } = data;
@@ -67,10 +83,23 @@ export default function PrintableApplication({ data, regNo = '', verification = 
       file: payment.proofFile,
     })),
   ].filter(document => document.file);
-  const selectedVerificationStage = verification?.status === 'Under Review'
-    ? 'Under Review / Verification in Progress'
-    : verification?.status || 'Submitted';
-  const selectedStageIndex = Math.max(VERIFICATION_STAGES.indexOf(selectedVerificationStage), 0);
+  const selectedVerificationStage = normalizeVerificationStatus(verification?.status);
+  const verificationFlowStages = [
+    'Submitted',
+    IN_PROGRESS_STATUS,
+    FINAL_STATUSES.includes(selectedVerificationStage) ? selectedVerificationStage : 'Final Decision',
+  ];
+  const selectedStageIndex = FINAL_STATUSES.includes(selectedVerificationStage)
+    ? 2
+    : selectedVerificationStage === IN_PROGRESS_STATUS ? 1 : 0;
+  const visibleStageRemarks = verification
+    ? [{
+      stage: selectedVerificationStage,
+      remarks: verification.verificationStages?.[selectedVerificationStage]
+        || verification.verificationNotes
+        || 'No remarks recorded for selected stage.',
+    }]
+    : [];
   return (
     <div className="printable-application" id="printable-application">
       <div className="print-header">
@@ -272,8 +301,33 @@ export default function PrintableApplication({ data, regNo = '', verification = 
       {verification && (
         <div className="office-verification-copy">
           <h4 className="print-section-title">Admissions Office Verification</h4>
+          <table className="print-data-table compact-print-table">
+            <tbody>
+              <tr>
+                <th>Current Status</th>
+                <td>{selectedVerificationStage}</td>
+                <th>Verified By</th>
+                <td>{verification.verifiedBy || 'Pending'}</td>
+              </tr>
+              <tr>
+                <th>Assigned Officer</th>
+                <td colSpan="3">{verification.assignedOfficerName || 'Unassigned'}</td>
+              </tr>
+              <tr>
+                <th>Submitted At</th>
+                <td>{formatDateTime(verification.submittedAt)}</td>
+                <th>Verified At</th>
+                <td>{formatDateTime(verification.verifiedAt) || 'Pending'}</td>
+              </tr>
+              <tr>
+                <th>Verification Notes</th>
+                <td colSpan="3">{verification.verificationNotes || 'No remarks recorded.'}</td>
+              </tr>
+            </tbody>
+          </table>
+
           <div className="verification-flow">
-            {VERIFICATION_STAGES.map((status, index) => (
+            {verificationFlowStages.map((status, index) => (
               <div
                 key={status}
                 className={`verification-step ${index <= selectedStageIndex ? 'completed' : ''} ${selectedVerificationStage === status ? 'active' : ''}`}
@@ -282,6 +336,31 @@ export default function PrintableApplication({ data, regNo = '', verification = 
                 <strong>{status}</strong>
               </div>
             ))}
+          </div>
+
+          <table className="print-data-table compact-print-table verification-stage-notes">
+            <thead>
+              <tr><th>Selected Stage</th><th>Review Remarks</th></tr>
+            </thead>
+            <tbody>
+              {visibleStageRemarks.map(({ stage, remarks }) => (
+                <tr key={stage}>
+                  <td>{stage}</td>
+                  <td>{remarks}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className="digital-signature-box">
+            <div>
+              <strong>Digital Signature</strong>
+              <p>This application copy is digitally verified in the JNTUGV admissions console.</p>
+            </div>
+            <div className="digital-signature-mark">
+              <strong>{verification.verifiedBy || 'Admissions Officer'}</strong>
+              <span>{formatDateTime(verification.verifiedAt) || 'Verification pending'}</span>
+            </div>
           </div>
         </div>
       )}
