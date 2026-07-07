@@ -47,31 +47,6 @@
   font: inherit;
 }
 
-.candidate-login-result {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--bg-main);
-}
-
-.candidate-login-result div {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.candidate-login-result span {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.candidate-login-result strong {
-  color: var(--primary-light);
-  overflow-wrap: anywhere;
-}
-
 .candidate-login-actions {
   display: flex;
   flex-wrap: wrap;
@@ -79,8 +54,7 @@
 }
 
 @media (max-width: 680px) {
-  .candidate-login-form,
-  .candidate-login-result {
+  .candidate-login-form {
     grid-template-columns: 1fr;
   }
 

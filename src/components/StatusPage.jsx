@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { getApplicationStatus } from '../lib/api';
+import CandidateStatusCard from './CandidateStatusCard';
 import './StatusPage.css';
 
 export default function StatusPage() {
@@ -48,7 +49,7 @@ export default function StatusPage() {
               className="form-input-floating"
               placeholder=" "
               value={registrationNo}
-              onChange={(event) => setRegistrationNo(event.target.value)}
+              onChange={(event) => setRegistrationNo(event.target.value.toUpperCase())}
             />
             <label className="form-label-floating">Registration Number</label>
           </div>
@@ -60,26 +61,7 @@ export default function StatusPage() {
 
         {error && <div className="status-error">{error}</div>}
 
-        {status && (
-          <div className="status-result">
-            <div>
-              <span>Registration Number</span>
-              <strong>{status.registrationNo}</strong>
-            </div>
-            <div>
-              <span>Candidate</span>
-              <strong>{status.candidateName || 'Not provided'}</strong>
-            </div>
-            <div>
-              <span>Status</span>
-              <strong>{status.status}</strong>
-            </div>
-            <div>
-              <span>Submitted At</span>
-              <strong>{new Date(status.submittedAt).toLocaleString()}</strong>
-            </div>
-          </div>
-        )}
+        <CandidateStatusCard application={status} />
 
         <Link to="/application-RUKF-IIBMP" className="status-link">Start a new application</Link>
       </section>

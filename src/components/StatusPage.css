@@ -40,31 +40,6 @@
   gap: 1rem;
 }
 
-.status-result {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  padding: 1rem;
-  border-radius: var(--radius-md);
-  background: var(--bg-main);
-  border: 1px solid var(--border-color);
-}
-
-.status-result div {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.status-result span {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.status-result strong {
-  color: var(--primary-light);
-  overflow-wrap: anywhere;
-}
-
 .status-error {
   padding: 0.85rem 1rem;
   border-radius: var(--radius-md);
@@ -83,8 +58,7 @@
     padding: 1.25rem;
   }
 
-  .status-form,
-  .status-result {
+  .status-form {
     grid-template-columns: 1fr;
   }
 }

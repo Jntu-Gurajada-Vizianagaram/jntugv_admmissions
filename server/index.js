@@ -159,6 +159,10 @@ const normalizeStatus = (status = 'Submitted') => (
   status === 'Under Review' ? IN_PROGRESS_STATUS : status
 );
 
+const normalizeRegistrationNo = (registrationNo = '') => (
+  String(registrationNo).trim().toUpperCase()
+);
+
 const writeJson = async (filePath, payload) => {
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, JSON.stringify(payload, null, 2));
@@ -454,6 +458,8 @@ const summarizeApplication = (record) => ({
   verifiedBy: record.verifiedBy || '',
   assignedOfficerId: record.assignedOfficerId || '',
   assignedOfficerName: record.assignedOfficerName || '',
+  verificationNotes: record.verificationNotes || '',
+  verificationStages: record.verificationStages || {},
 });
 
 const loadApplications = async (year = DEFAULT_YEAR, processCode = DEFAULT_PROCESS) => {
@@ -469,9 +475,10 @@ const saveApplications = async (records, year = DEFAULT_YEAR, processCode = DEFA
 
 const findApplication = async (registrationNo) => {
   const records = await loadApplications(DEFAULT_YEAR, DEFAULT_PROCESS);
+  const normalizedRegistrationNo = normalizeRegistrationNo(registrationNo);
   return {
     records,
-    record: records.find(item => item.registrationNo === registrationNo),
+    record: records.find(item => normalizeRegistrationNo(item.registrationNo) === normalizedRegistrationNo),
     year: DEFAULT_YEAR,
     processCode: DEFAULT_PROCESS,
   };

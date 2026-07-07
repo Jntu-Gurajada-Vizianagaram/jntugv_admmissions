@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LogIn, Search } from 'lucide-react';
 import { getApplicationStatus } from '../lib/api';
+import CandidateStatusCard from './CandidateStatusCard';
 import './CandidateLogin.css';
 
 export default function CandidateLogin() {
@@ -42,7 +43,7 @@ export default function CandidateLogin() {
             Application Registration Number
             <input
               value={registrationNo}
-              onChange={(event) => setRegistrationNo(event.target.value)}
+              onChange={(event) => setRegistrationNo(event.target.value.toUpperCase())}
               placeholder="JNTUGV-IIBMP-2026-XXXXXX"
             />
           </label>
@@ -54,33 +55,19 @@ export default function CandidateLogin() {
 
         {error && <div className="status-error">{error}</div>}
 
-        {application && (
-          <div className="candidate-login-result">
-            <div>
-              <span>Registration Number</span>
-              <strong>{application.registrationNo}</strong>
-            </div>
-            <div>
-              <span>Candidate</span>
-              <strong>{application.candidateName || 'Not provided'}</strong>
-            </div>
-            <div>
-              <span>Programme</span>
-              <strong>{application.programme}</strong>
-            </div>
-            <div>
-              <span>Current Status</span>
-              <strong>{application.status}</strong>
-            </div>
-          </div>
-        )}
+        <CandidateStatusCard application={application} />
 
         <div className="candidate-login-actions">
           <Link to="/application-RUKF-IIBMP" className="btn btn-accent">
             <Search size={18} />
             Start Application
           </Link>
-          <Link to="/status" className="btn btn-outline">Track by Status Page</Link>
+          <Link
+            to={application?.registrationNo ? `/status?reg=${encodeURIComponent(application.registrationNo)}` : '/status'}
+            className="btn btn-outline"
+          >
+            Track by Status Page
+          </Link>
         </div>
       </section>
     </div>
