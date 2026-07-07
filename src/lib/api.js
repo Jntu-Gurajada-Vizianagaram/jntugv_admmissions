@@ -40,6 +40,11 @@ export const submitApplication = (application) => request('/api/applications', {
   body: JSON.stringify({ year: '2026', processCode: 'IIBMP', application }),
 });
 
+export const initiateBillDeskPayment = (payload) => request('/api/payments/billdesk/initiate', {
+  method: 'POST',
+  body: JSON.stringify(payload),
+});
+
 export const getApplicationStatus = (registrationNo) => (
   request(`/api/applications/${encodeURIComponent(registrationNo)}`)
 );

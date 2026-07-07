@@ -102,6 +102,19 @@ Deployment templates are included:
 
 Point `admissions.jntugv.edu.in` to the server, proxy it to `127.0.0.1:5000`, then enable HTTPS using the institution SSL certificate or Certbot.
 
+## BillDesk Payment
+
+The payment step no longer creates mock transactions. To enable live BillDesk payment, add the university BillDesk merchant details in the production environment:
+
+```text
+BILLDESK_ENABLED=true
+BILLDESK_MERCHANT_ID=...
+BILLDESK_PAYMENT_URL=...
+BILLDESK_RETURN_URL=https://admissions.jntugv.edu.in/payment/billdesk/return
+```
+
+BillDesk final request signing and payment-status callback verification must match the merchant integration kit issued to the university. Until those live credentials are configured, candidates can enter verified transaction details and upload payment proof manually.
+
 ## Runtime Data
 
 Runtime application data, uploaded files, and admin user credentials are intentionally ignored by Git. Yearly schema files, such as `server/data/admissions/2026/IIBMP/schema.json`, remain source-controlled.

@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
-import { Check, Upload, X } from 'lucide-react';
+import { Check, ExternalLink, Upload, X } from 'lucide-react';
 import { useForm } from '../../context/useForm';
 import { collectMessages, positiveAmount, required, textFormat } from '../../utils/validation';
+import { initiateBillDeskPayment } from '../../lib/api';
 import CalendarInput from '../CalendarInput';
 import './Step5Payment.css';
 import './Step3Academics.css';
@@ -54,9 +55,10 @@ function PaymentProofUpload({ payment, index, updatePayment }) {
 }
 
 export default function Step5Payment({ onNext, onBack }) {
-  const { data, updateData, updatePayment, addPaymentRow, removePaymentRow } = useForm();
+  const { data, updatePayment, addPaymentRow, removePaymentRow } = useForm();
   const [isProcessing, setIsProcessing] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState('');
 
   const paymentHasValue = (payment) => (
     PAYMENT_FIELDS.some(field => String(payment[field.key] || '').trim()) || payment.proofFile
@@ -99,30 +101,30 @@ export default function Step5Payment({ onNext, onBack }) {
     onNext();
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     setIsProcessing(true);
-    setTimeout(() => {
-      const mockTransactionId = `TXN${Math.random().toString(36).slice(2, 11).toUpperCase()}`;
-      const paymentDate = new Date().toISOString().slice(0, 10);
-      const payments = [...data.payments];
-      payments[0] = {
-        ...payments[0],
-        fee: payments[0]?.fee || '2000',
-        txn_ref: mockTransactionId,
-        txn_date: paymentDate,
-        mode: 'Online',
-        status: 'SUCCESS',
-      };
+    setPaymentMessage('');
 
-      updateData({
-        ...data,
-        payments,
-        paymentStatus: 'SUCCESS',
-        transactionId: mockTransactionId,
-        paymentDate,
+    try {
+      const amount = data.payments[0]?.fee || '2000';
+      const result = await initiateBillDeskPayment({
+        amount,
+        candidateName: data.personal.name,
+        email: data.personal.email,
+        mobile: data.personal.mobile,
       });
+
+      if (result.redirectUrl) {
+        window.location.assign(result.redirectUrl);
+        return;
+      }
+
+      setPaymentMessage(result.message || 'BillDesk payment initiation response received. Please continue after payment confirmation.');
+    } catch (err) {
+      setPaymentMessage(err.message || 'Unable to initiate BillDesk payment. Please enter transaction details after completing payment.');
+    } finally {
       setIsProcessing(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -151,6 +153,10 @@ export default function Step5Payment({ onNext, onBack }) {
           <div className="summary-row">
             <span>Candidate Name:</span>
             <span>{data.personal.name || 'Not Provided'}</span>
+          </div>
+          <div className="billdesk-note">
+            <strong>Online Payment:</strong>
+            <span>Use the BillDesk button only after the university BillDesk merchant account is configured. After successful online payment, enter the transaction reference, date, mode, status, and upload the receipt.</span>
           </div>
         </div>
 
@@ -221,9 +227,12 @@ export default function Step5Payment({ onNext, onBack }) {
             onClick={handlePayment}
             disabled={isProcessing}
           >
-            {isProcessing ? 'Processing...' : 'Mock Online Payment'}
+            <ExternalLink size={18} />
+            {isProcessing ? 'Opening BillDesk...' : 'Proceed to BillDesk Payment'}
           </button>
         </div>
+
+        {paymentMessage && <div className="billdesk-message">{paymentMessage}</div>}
       </div>
 
       <div className="step-nav">
