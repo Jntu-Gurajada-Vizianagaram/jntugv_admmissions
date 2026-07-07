@@ -310,7 +310,7 @@ export default function PrintableApplication({ data, regNo = '', verification = 
                 <td>{verification.verifiedBy || 'Pending'}</td>
               </tr>
               <tr>
-                <th>Assigned Officer</th>
+                <th>Assigned To</th>
                 <td colSpan="3">{verification.assignedOfficerName || 'Unassigned'}</td>
               </tr>
               <tr>

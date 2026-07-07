@@ -21,7 +21,7 @@ export default function ModernHeader() {
             <li><NavLink to="/">Home</NavLink></li>
             <li><NavLink to="/application-RUKF-IIBMP">Application</NavLink></li>
             <li><NavLink to="/status">Status</NavLink></li>
-            <li><NavLink to="/admin">College Console</NavLink></li>
+            <li><NavLink to="/admin">Department Login</NavLink></li>
             <li>
               <Link to="/application-RUKF-IIBMP" className="btn btn-primary nav-cta">
                 <ClipboardList size={16} />

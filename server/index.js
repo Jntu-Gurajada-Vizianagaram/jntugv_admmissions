@@ -42,10 +42,11 @@ const DEFAULT_PROCESS = 'IIBMP';
 const MAX_BODY_SIZE = 120_000_000;
 const IN_PROGRESS_STATUS = 'Under Review / Verification in Progress';
 const VERIFICATION_STAGES = ['Submitted', IN_PROGRESS_STATUS, 'Verified', 'Needs Correction', 'Rejected'];
+const MANAGEMENT_ROLES = ['admin', 'co-convenor'];
 const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || 'jntugv-admissions-local-secret';
 const DEFAULT_ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@2026';
-const DEFAULT_ADMIN_NAME = process.env.ADMIN_NAME || 'Admissions Administrator';
+const DEFAULT_ADMIN_NAME = process.env.ADMIN_NAME || 'Directorate of Admissions Convenor';
 
 const IIBMP_2026_SCHEMA = {
   year: '2026',
@@ -236,6 +237,8 @@ const publicUser = (user) => ({
   createdAt: user.createdAt,
 });
 
+const canManageAdmissions = (user) => MANAGEMENT_ROLES.includes(user?.role);
+
 const signToken = (payload) => {
   const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
   const signature = crypto.createHmac('sha256', TOKEN_SECRET).update(body).digest('base64url');
@@ -274,8 +277,8 @@ const requireAdminUser = async (req, res) => {
 const requireSuperAdmin = async (req, res) => {
   const user = await requireAdminUser(req, res);
   if (!user) return null;
-  if (user.role !== 'admin') {
-    json(res, 403, { message: 'Administrator access required' });
+  if (!canManageAdmissions(user)) {
+    json(res, 403, { message: 'Convenor or Co-convenor access required' });
     return null;
   }
   return user;
@@ -585,11 +588,15 @@ const server = createServer(async (req, res) => {
       }
 
       if (req.method === 'POST') {
+        if (adminUser.role !== 'admin') {
+          return json(res, 403, { message: 'Only the Convenor can create department logins' });
+        }
+
         const body = await readBody(req);
         const username = String(body.username || '').trim();
         const password = String(body.password || '').trim();
         const name = String(body.name || '').trim();
-        const role = body.role === 'admin' ? 'admin' : 'officer';
+        const role = ['co-convenor', 'officer'].includes(body.role) ? body.role : 'officer';
 
         if (!username || !password || !name) {
           return json(res, 400, { message: 'Name, username, and password are required' });
@@ -620,6 +627,10 @@ const server = createServer(async (req, res) => {
     if (officerMatch && req.method === 'PATCH') {
       const adminUser = await requireSuperAdmin(req, res);
       if (!adminUser) return;
+      if (adminUser.role !== 'admin') {
+        return json(res, 403, { message: 'Only the Convenor can update department logins' });
+      }
+
       const body = await readBody(req);
       const users = await loadAdminUsers();
       const user = users.find(item => item.id === decodeURIComponent(officerMatch[1]));
@@ -628,8 +639,13 @@ const server = createServer(async (req, res) => {
         return json(res, 404, { message: 'Officer not found' });
       }
 
+      if (user.role === 'admin') {
+        return json(res, 403, { message: 'Convenor login is maintained from environment configuration' });
+      }
+
       user.name = body.name ?? user.name;
-      user.role = body.role === 'admin' ? 'admin' : body.role === 'officer' ? 'officer' : user.role;
+      const nextRole = ['co-convenor', 'officer'].includes(body.role) ? body.role : user.role;
+      user.role = nextRole;
       user.active = typeof body.active === 'boolean' ? body.active : user.active;
       if (body.password) {
         const hashed = hashPassword(String(body.password));
@@ -685,7 +701,7 @@ const server = createServer(async (req, res) => {
       const status = url.searchParams.get('status') || '';
       const records = await loadApplications(year, processCode);
       const filtered = records
-        .filter(record => adminUser.role === 'admin' || record.assignedOfficerId === adminUser.id)
+        .filter(record => canManageAdmissions(adminUser) || record.assignedOfficerId === adminUser.id)
         .filter(record => !status || normalizeStatus(record.status) === status)
         .filter(record => {
           if (!search) return true;
@@ -712,7 +728,7 @@ const server = createServer(async (req, res) => {
         return json(res, 404, { message: 'Application not found' });
       }
 
-      if (adminUser.role !== 'admin' && record.assignedOfficerId !== adminUser.id) {
+      if (!canManageAdmissions(adminUser) && record.assignedOfficerId !== adminUser.id) {
         return json(res, 403, { message: 'Application is not assigned to this verification officer' });
       }
 
@@ -727,16 +743,20 @@ const server = createServer(async (req, res) => {
         const assignment = {};
 
         if (Object.prototype.hasOwnProperty.call(body, 'assignedOfficerId')) {
-          if (adminUser.role !== 'admin') {
-            return json(res, 403, { message: 'Only Director / Convenor admin can assign applications to officers' });
+          if (!canManageAdmissions(adminUser)) {
+            return json(res, 403, { message: 'Only Convenor or Co-convenor can assign applications to verification officers' });
           }
 
           const assignedOfficerId = String(body.assignedOfficerId || '');
           if (assignedOfficerId) {
             const users = await loadAdminUsers();
-            const officer = users.find(user => user.id === assignedOfficerId && user.active && user.role === 'officer');
+            const officer = users.find(user => (
+              user.id === assignedOfficerId
+              && user.active
+              && ['co-convenor', 'officer'].includes(user.role)
+            ));
             if (!officer) {
-              return json(res, 400, { message: 'Selected verification officer is not active or does not exist' });
+              return json(res, 400, { message: 'Selected Co-convenor or Verification Officer is not active or does not exist' });
             }
             assignment.assignedOfficerId = officer.id;
             assignment.assignedOfficerName = officer.name;

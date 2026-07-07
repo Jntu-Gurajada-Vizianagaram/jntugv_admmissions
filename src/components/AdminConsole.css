@@ -49,8 +49,23 @@
   font: inherit;
 }
 
-.admin-login-card small {
+.admin-login-support {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
   color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.admin-login-support a {
+  color: var(--primary-blue);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.admin-login-support a:hover {
+  text-decoration: underline;
 }
 
 .admin-hero {

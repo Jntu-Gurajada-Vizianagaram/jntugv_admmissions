@@ -15,10 +15,17 @@ import PrintableApplication from './PrintableApplication';
 import './AdminConsole.css';
 
 const STATUSES = ['Submitted', 'Under Review / Verification in Progress', 'Verified', 'Needs Correction', 'Rejected'];
+const ROLE_LABELS = {
+  admin: 'Convenor',
+  'co-convenor': 'Co-convenor',
+  officer: 'Verification Officer',
+};
 const emptyStageNotes = () => Object.fromEntries(STATUSES.map(status => [status, '']));
 const normalizeStatus = (status = 'Submitted') => (
   status === 'Under Review' ? 'Under Review / Verification in Progress' : status
 );
+const canManageAdmissions = (user) => ['admin', 'co-convenor'].includes(user?.role);
+const roleLabel = (role) => ROLE_LABELS[role] || role;
 
 function UploadedDocumentPreview({ item }) {
   const [blobUrl, setBlobUrl] = useState('');
@@ -124,10 +131,11 @@ export default function AdminConsole() {
 
   const selectedApplication = selected?.application;
   const currentVerifierName = adminUser?.name || adminUser?.username || '';
-  const activeVerificationOfficers = officers.filter(officer => officer.active && officer.role === 'officer');
+  const activeAssignees = officers.filter(officer => officer.active && ['co-convenor', 'officer'].includes(officer.role));
+  const departmentLogins = officers.filter(officer => ['co-convenor', 'officer'].includes(officer.role));
 
   const loadOfficers = useCallback(async () => {
-    if (adminUser?.role !== 'admin') return;
+    if (!canManageAdmissions(adminUser)) return;
     const result = await listVerificationOfficers();
     setOfficers(result.officers || []);
   }, [adminUser]);
@@ -201,7 +209,7 @@ export default function AdminConsole() {
       const verifierName = verifiedBy.trim() || currentVerifierName;
       const record = await updateAdminApplication(selected.registrationNo, {
         status: reviewStatus,
-        ...(adminUser.role === 'admin' ? { assignedOfficerId } : {}),
+        ...(canManageAdmissions(adminUser) ? { assignedOfficerId } : {}),
         verifiedBy: verifierName,
         verificationNotes,
         verificationStages,
@@ -258,8 +266,8 @@ export default function AdminConsole() {
       <div className="admin-login-page">
         <form className="admin-login-card" onSubmit={handleLogin}>
           <p className="page-kicker">Admissions Office</p>
-          <h2>Admin Login</h2>
-          <p>Login to retrieve applications, assign verification officers, and maintain admissions verification.</p>
+          <h2>Department Login</h2>
+          <p>Login to retrieve applications, assign Co-convenors and Verification Officers, and maintain admissions verification.</p>
           {loginError && <div className="status-error">{loginError}</div>}
           <label>
             Username
@@ -270,7 +278,12 @@ export default function AdminConsole() {
             <input type="password" value={loginForm.password} onChange={(event) => setLoginForm(prev => ({ ...prev, password: event.target.value }))} />
           </label>
           <button type="submit" className="btn btn-primary" disabled={loading}>Login</button>
-          <small>Default super admin: admin / Admin@2026</small>
+          <div className="admin-login-support">
+            <span>Forgot password?</span>
+            <a href="mailto:da@jntugv.edu.in?subject=Admissions%20Portal%20Password%20Reset%20Request&body=Please%20reset%20my%20admissions%20portal%20login.%0A%0AName%3A%0AUsername%20/%20Email%3A%0ARole%20(Convenor%20/%20Co-convenor%20/%20Verification%20Officer)%3A%0AContact%20Number%3A">
+              Request reset by email
+            </a>
+          </div>
         </form>
       </div>
     );
@@ -280,12 +293,12 @@ export default function AdminConsole() {
     <div className="admin-console">
       <section className="admin-hero no-print">
         <div>
-          <p className="page-kicker">College Console</p>
+          <p className="page-kicker">Department Login</p>
           <h2>IIBMP 2026 Admissions Database</h2>
-          <p>Retrieve applications, verify uploaded documents, update status, and print college-level application documents.</p>
+          <p>Directorate of Admissions Convenor can create department logins, assign applications, verify documents, and print admissions records.</p>
         </div>
         <div className="admin-stats">
-          <span><strong>{adminUser.name}</strong>{adminUser.role}</span>
+          <span><strong>{adminUser.name}</strong>{roleLabel(adminUser.role)}</span>
           <span><strong>{counts.total}</strong>Total</span>
           <span><strong>{counts.pending}</strong>Pending</span>
           <span><strong>{counts.verified}</strong>Verified</span>
@@ -299,16 +312,16 @@ export default function AdminConsole() {
       {adminUser.role === 'admin' && (
         <section className="officer-console no-print">
           <div>
-            <h3>Verification Officers</h3>
-            <p>Create and maintain logins for admissions verification officers.</p>
+            <h3>Department Login Management</h3>
+            <p>Create and maintain Co-convenor and Verification Officer logins for this admissions process.</p>
           </div>
           <form className="officer-form" onSubmit={addOfficer}>
-            <input placeholder="Officer name" value={officerForm.name} onChange={(event) => setOfficerForm(prev => ({ ...prev, name: event.target.value }))} />
+            <input placeholder="Name" value={officerForm.name} onChange={(event) => setOfficerForm(prev => ({ ...prev, name: event.target.value }))} />
             <input placeholder="Username" value={officerForm.username} onChange={(event) => setOfficerForm(prev => ({ ...prev, username: event.target.value }))} />
             <input type="password" placeholder="Password" value={officerForm.password} onChange={(event) => setOfficerForm(prev => ({ ...prev, password: event.target.value }))} />
             <select value={officerForm.role} onChange={(event) => setOfficerForm(prev => ({ ...prev, role: event.target.value }))}>
-              <option value="officer">Officer</option>
-              <option value="admin">Admin</option>
+              <option value="officer">Verification Officer</option>
+              <option value="co-convenor">Co-convenor</option>
             </select>
             <button type="submit" className="btn btn-accent">
               <UserPlus size={17} />
@@ -316,10 +329,10 @@ export default function AdminConsole() {
             </button>
           </form>
           <div className="officer-list">
-            {officers.map(officer => (
+            {departmentLogins.map(officer => (
               <div key={officer.id} className="officer-item">
                 <strong>{officer.name}</strong>
-                <span>{officer.username} | {officer.role}</span>
+                <span>{officer.username} | {roleLabel(officer.role)}</span>
                 <button type="button" className="table-link-button" onClick={() => toggleOfficer(officer)}>
                   {officer.active ? 'Disable' : 'Enable'}
                 </button>
@@ -391,13 +404,13 @@ export default function AdminConsole() {
                     {STATUSES.map(item => <option key={item} value={item}>{item}</option>)}
                   </select>
                 </label>
-                {adminUser.role === 'admin' && (
+                {canManageAdmissions(adminUser) && (
                   <label>
-                    Assigned Officer
+                    Assigned To
                     <select value={assignedOfficerId} onChange={(event) => setAssignedOfficerId(event.target.value)}>
                       <option value="">Unassigned</option>
-                      {activeVerificationOfficers.map(officer => (
-                        <option key={officer.id} value={officer.id}>{officer.name}</option>
+                      {activeAssignees.map(officer => (
+                        <option key={officer.id} value={officer.id}>{officer.name} ({roleLabel(officer.role)})</option>
                       ))}
                     </select>
                   </label>

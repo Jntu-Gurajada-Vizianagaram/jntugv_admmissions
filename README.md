@@ -7,8 +7,8 @@ Admissions portal for the JNTUGV RUKF-IIBMP 2026 application process.
 - React/Vite frontend for candidate application flow.
 - Node.js backend for yearly admissions schemas and application storage.
 - File upload persistence for certificates, rank cards, SBI Collect payment receipts, photos, and signatures.
-- Admin login for admissions office users.
-- Verification officer management.
+- Department Login for Directorate of Admissions users.
+- Convenor, Co-convenor, and Verification Officer management.
 - College-level application retrieval, document preview, verification, print, and PDF download.
 - Printable application format with JNTUGV and Reutlingen Knowledge Foundation branding.
 
@@ -46,17 +46,17 @@ Default local URLs:
 - Frontend: `http://127.0.0.1:5173`
 - Backend: `http://localhost:5000`
 
-## Admin Login
+## Department Login
 
-On first backend start, a default admin account is created in local runtime data from environment variables.
+On first backend start, a default Convenor account is created in local runtime data from environment variables.
 
 ```text
 ADMIN_USERNAME=da@jntugv.edu.in
 ADMIN_PASSWORD=use-a-strong-secret-password
-ADMIN_NAME=Director of Admissions
+ADMIN_NAME=Directorate of Admissions Convenor
 ```
 
-Set these values in `.env` for local use and in `/etc/jntugv-admissions.env` for production. The runtime `server/data/admin-users.json` file stores only the password hash.
+Set these values in `.env` for local use and in `/etc/jntugv-admissions.env` for production. The runtime `server/data/admin-users.json` file stores only the password hash. The Convenor can create Co-convenor and Verification Officer logins from Department Login.
 
 ## Useful Commands
 
