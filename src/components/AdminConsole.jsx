@@ -119,6 +119,7 @@ export default function AdminConsole() {
   const [officerForm, setOfficerForm] = useState({ name: '', username: '', password: '', role: 'officer' });
 
   const selectedApplication = selected?.application;
+  const currentVerifierName = adminUser?.name || adminUser?.username || '';
 
   const loadOfficers = useCallback(async () => {
     if (adminUser?.role !== 'admin') return;
@@ -168,7 +169,7 @@ export default function AdminConsole() {
       const record = await getAdminApplication(registrationNo);
       setSelected(record);
       setReviewStatus(record.status);
-      setVerifiedBy(record.verifiedBy || '');
+      setVerifiedBy(record.verifiedBy || currentVerifierName);
       setVerificationNotes(record.verificationNotes || '');
       setVerificationStages({ ...emptyStageNotes(), ...(record.verificationStages || {}) });
     } catch (err) {
@@ -183,13 +184,15 @@ export default function AdminConsole() {
     setLoading(true);
     setError('');
     try {
+      const verifierName = verifiedBy.trim() || currentVerifierName;
       const record = await updateAdminApplication(selected.registrationNo, {
         status: reviewStatus,
-        verifiedBy,
+        verifiedBy: verifierName,
         verificationNotes,
         verificationStages,
       });
       setSelected(record);
+      setVerifiedBy(record.verifiedBy || verifierName);
       await loadRecords();
     } catch (err) {
       setError(err.message || 'Unable to update verification');
