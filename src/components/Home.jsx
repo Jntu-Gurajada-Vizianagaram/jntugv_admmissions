@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, CheckCircle2, ClipboardList, FileCheck2, GraduationCap, ShieldCheck } from 'lucide-react';
+import { CalendarDays, CheckCircle2, ClipboardList, FileCheck2, GraduationCap, LogIn, ShieldCheck } from 'lucide-react';
 import './Home.css';
 
 export default function Home() {
@@ -14,11 +14,21 @@ export default function Home() {
             <img src="/reutlingen-logo.png" alt="Reutlingen University" />
           </div>
 
-          <div className="hero-badge">Applications are commencing shortly</div>
-          <h1 className="hero-title">RUKF-IIBMP Admissions 2026-27</h1>
+          <div className="hero-badge">Directorate of Admissions</div>
+          <h1 className="hero-title">JNTUGV Admissions Portal</h1>
           <p className="hero-subtitle">
-            International Integrated Bachelor&apos;s and Master&apos;s Program offered by JNTUGV in collaboration with Knowledge Foundation of Reutlingen University, Germany.
+            Directorate of Admissions, Jawaharlal Nehru Technological University Gurajada Vizianagaram manages candidate applications, verification, counselling, and admissions records.
           </p>
+
+          <div className="home-application-card">
+            <span>Applications are commencing shortly</span>
+            <h2>RUKF-IIBMP Admissions 2026-27</h2>
+            <p>International Integrated Bachelor&apos;s and Master&apos;s Program offered by JNTUGV in collaboration with Knowledge Foundation of Reutlingen University, Germany.</p>
+            <Link to="/application-RUKF-IIBMP" className="btn btn-primary">
+              <ClipboardList size={18} />
+              Open Application Page
+            </Link>
+          </div>
 
           <div className="notice-panel">
             <strong>Admissions Notice</strong>
@@ -26,9 +36,9 @@ export default function Home() {
           </div>
 
           <div className="hero-cta-group">
-            <Link to="/application-RUKF-IIBMP" className="btn btn-primary btn-lg">
-              <ClipboardList size={18} />
-              Application Form
+            <Link to="/candidate-login" className="btn btn-accent btn-lg">
+              <LogIn size={18} />
+              Candidate Login
             </Link>
             <Link to="/status" className="btn btn-outline btn-lg">
               <FileCheck2 size={18} />

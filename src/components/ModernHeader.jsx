@@ -20,6 +20,7 @@ export default function ModernHeader() {
           <ul>
             <li><NavLink to="/">Home</NavLink></li>
             <li><NavLink to="/application-RUKF-IIBMP">Application</NavLink></li>
+            <li><NavLink to="/candidate-login">Candidate Login</NavLink></li>
             <li><NavLink to="/status">Status</NavLink></li>
             <li><NavLink to="/admin">Department Login</NavLink></li>
             <li>

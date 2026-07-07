@@ -79,6 +79,39 @@
   line-height: 1.7;
 }
 
+.home-application-card {
+  display: grid;
+  gap: 0.65rem;
+  width: min(100%, 820px);
+  padding: 1rem;
+  border: 1px solid rgba(191, 219, 254, 0.5);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.home-application-card span {
+  color: #fde68a;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.home-application-card h2 {
+  margin: 0;
+  color: white;
+  font-size: clamp(1.25rem, 3vw, 2rem);
+}
+
+.home-application-card p {
+  margin: 0;
+  color: #dbeafe;
+  line-height: 1.6;
+}
+
+.home-application-card .btn {
+  justify-self: start;
+}
+
 .notice-panel {
   display: grid;
   gap: 0.3rem;
