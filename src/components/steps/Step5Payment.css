@@ -107,41 +107,71 @@
   margin: 0.25rem 0;
 }
 
-.payment-table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.payment-entry-list {
+  display: grid;
+  gap: 1rem;
   margin: 1rem 0;
-  border-radius: var(--radius-md);
 }
 
-.payment-entry-table {
-  width: 100%;
-  min-width: min(1080px, calc(100vw - 2rem));
-  border-collapse: collapse;
+.payment-entry-row {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   background: white;
   box-shadow: var(--shadow-sm);
 }
 
-.payment-entry-table th {
-  padding: 0.8rem;
-  background: var(--primary-blue);
-  color: white;
-  text-align: left;
-  font-weight: 600;
-}
-
-.payment-entry-table td {
-  padding: 0.65rem;
+.payment-row-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border-color);
 }
 
-.payment-entry-table input {
+.payment-row-head strong {
+  color: var(--primary-blue);
+}
+
+.payment-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.payment-field {
+  position: relative;
+  display: grid;
+  gap: 0.45rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.payment-field input {
   width: 100%;
-  min-width: 130px;
+  min-width: 0;
+  min-height: 54px;
   padding: 0.7rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   font: inherit;
+}
+
+.payment-field .calendar-field {
+  margin-bottom: 0;
+}
+
+.payment-field .calendar-popover {
+  z-index: 80;
+}
+
+.payment-proof-field {
+  align-self: stretch;
 }
 
 .payment-actions-row {
@@ -219,7 +249,7 @@
 }
 
 @media (min-width: 1120px) {
-  .payment-entry-table {
-    min-width: 0;
+  .payment-field-grid {
+    grid-template-columns: 1fr 1.35fr 1.1fr 1fr 1fr 1.3fr;
   }
 }

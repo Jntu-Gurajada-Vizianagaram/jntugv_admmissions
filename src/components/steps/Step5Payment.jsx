@@ -141,63 +141,59 @@ export default function Step5Payment({ onNext, onBack }) {
           </div>
         </div>
 
-        <div className="payment-table-wrap">
-          <table className="payment-entry-table">
-            <thead>
-              <tr>
-                <th>S.No</th>
-                {PAYMENT_FIELDS.map(field => <th key={field.key}>{field.label} <span className="required-star">*</span></th>)}
-                <th>SBI Collect Receipt PDF <span className="required-star">*</span></th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.payments.map((payment, index) => (
-                <tr key={index}>
-                  <td>{index + 1}</td>
-                  {PAYMENT_FIELDS.map(field => (
-                    <td key={field.key} className={field.type === 'date' ? 'table-calendar-cell' : undefined}>
-                      {field.type === 'date' ? (
-                        <CalendarInput
-                          name={`txn_date_${index}`}
-                          label={field.label}
-                          value={payment[field.key] || ''}
-                          onChange={(event) => updatePayment(index, field.key, event.target.value)}
-                          required
-                          max="2026-12-31"
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          value={payment[field.key] || ''}
-                          placeholder={field.placeholder}
-                          onChange={(event) => updatePayment(
-                            index,
-                            field.key,
-                            field.key === 'fee'
-                              ? event.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1')
-                              : UPPERCASE_PAYMENT_FIELDS.has(field.key)
-                                ? event.target.value.toUpperCase()
-                                : event.target.value
-                          )}
-                          style={UPPERCASE_PAYMENT_FIELDS.has(field.key) ? { textTransform: 'uppercase' } : undefined}
-                          required
-                        />
-                      )}
-                    </td>
-                  ))}
-                  <td>
-                    <PaymentProofUpload payment={payment} index={index} updatePayment={updatePayment} />
-                  </td>
-                  <td>
-                    <button type="button" className="table-link-button" onClick={() => removePaymentRow(index)}>
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="payment-entry-list">
+          {data.payments.map((payment, index) => (
+            <section className="payment-entry-row" key={index}>
+              <div className="payment-row-head">
+                <strong>Payment Row {index + 1}</strong>
+                <button type="button" className="table-link-button" onClick={() => removePaymentRow(index)}>
+                  Remove
+                </button>
+              </div>
+
+              <div className="payment-field-grid">
+                {PAYMENT_FIELDS.map(field => (
+                  <div key={field.key} className="payment-field">
+                    {field.type !== 'date' && (
+                      <span>{field.label} <span className="required-star">*</span></span>
+                    )}
+                    {field.type === 'date' ? (
+                      <CalendarInput
+                        name={`txn_date_${index}`}
+                        label={field.label}
+                        value={payment[field.key] || ''}
+                        onChange={(event) => updatePayment(index, field.key, event.target.value)}
+                        required
+                        max="2026-12-31"
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={payment[field.key] || ''}
+                        placeholder={field.placeholder}
+                        onChange={(event) => updatePayment(
+                          index,
+                          field.key,
+                          field.key === 'fee'
+                            ? event.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1')
+                            : UPPERCASE_PAYMENT_FIELDS.has(field.key)
+                              ? event.target.value.toUpperCase()
+                              : event.target.value
+                        )}
+                        style={UPPERCASE_PAYMENT_FIELDS.has(field.key) ? { textTransform: 'uppercase' } : undefined}
+                        required
+                      />
+                    )}
+                  </div>
+                ))}
+
+                <div className="payment-field payment-proof-field">
+                  <span>SBI Collect Receipt PDF <span className="required-star">*</span></span>
+                  <PaymentProofUpload payment={payment} index={index} updatePayment={updatePayment} />
+                </div>
+              </div>
+            </section>
+          ))}
         </div>
 
         <div className="payment-actions-row">
