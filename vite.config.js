@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    allowedHosts: ['admissions.jntugv.edu.in'],
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
