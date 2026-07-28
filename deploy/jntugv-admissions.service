@@ -4,9 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/var/www/jntugv-admissions
+WorkingDirectory=/home/jntugv-admissions/htdocs/admissions.jntugv.edu.in/jntugv_admmissions
 EnvironmentFile=/etc/jntugv-admissions.env
-ExecStart=/usr/bin/node server/index.js
+ExecStart=/usr/bin/node /home/jntugv-admissions/htdocs/admissions.jntugv.edu.in/jntugv_admmissions/server/index.js
 Restart=always
 RestartSec=5
 User=www-data
