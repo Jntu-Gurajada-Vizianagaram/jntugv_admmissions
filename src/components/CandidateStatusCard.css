@@ -87,6 +87,18 @@
   background: #eff6ff;
 }
 
+.candidate-download-button {
+  justify-self: start;
+}
+
+.candidate-pdf-source {
+  position: fixed;
+  top: 0;
+  left: -12000px;
+  width: 1100px;
+  pointer-events: none;
+}
+
 @media (max-width: 760px) {
   .candidate-status-grid,
   .candidate-status-flow {

@@ -136,6 +136,31 @@
   color: var(--primary-blue);
 }
 
+.payment-required-badge,
+.payment-optional-badge {
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.payment-required-badge {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.payment-optional-badge {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.payment-field input[readonly] {
+  background: #f1f5f9;
+  color: var(--primary-blue);
+  font-weight: 800;
+  cursor: default;
+}
+
 .payment-field-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));

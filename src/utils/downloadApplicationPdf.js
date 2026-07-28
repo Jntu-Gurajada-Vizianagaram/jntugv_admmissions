@@ -1,3 +1,6 @@
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
+
 const filenameSafe = (value) => (
   String(value || 'application')
     .replace(/[^a-zA-Z0-9._-]+/g, '-')
@@ -10,12 +13,6 @@ export const downloadApplicationPdf = async (registrationNo = '') => {
   if (!element) {
     throw new Error('Application preview is not available for PDF download.')
   }
-
-  const [{ jsPDF }, html2canvasModule] = await Promise.all([
-    import('jspdf'),
-    import('html2canvas'),
-  ])
-  const html2canvas = html2canvasModule.default
 
   const canvas = await html2canvas(element, {
     backgroundColor: '#ffffff',

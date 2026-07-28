@@ -1,24 +1,43 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Eye, Printer, X } from 'lucide-react';
 import './PrintableApplication.css';
 
 const EXAM_LABELS = {
   ap: 'AP-EAPCET-2026',
   tg: 'TG-EAPCET-2026',
   jee: 'JEE (MAINS)',
-  others: 'Others',
+  others: 'With Intermediate Marks',
 };
 const IN_PROGRESS_STATUS = 'Under Review / Verification in Progress';
 const FINAL_STATUSES = ['Verified', 'Needs Correction', 'Rejected'];
 
 const value = (text) => text || '';
-const uploaded = (file) => (file ? 'Uploaded' : 'Pending');
-const fileName = (file) => file?.name || file?.storedName || '';
 const rowHasValue = (row, keys) => keys.some(key => String(row[key] || '').trim() || row[key]);
 const fileSrc = (file) => {
   if (!file) return '';
   if (typeof file === 'string') return file;
   return file.url || file.dataUrl || '';
 };
+
+function UploadStatus({ file, label, onView }) {
+  if (!file) return <span className="upload-status-pending">Pending</span>;
+
+  return (
+    <span className="upload-status">
+      <span>Uploaded</span>
+      <button
+        type="button"
+        className="upload-view-button"
+        onClick={() => onView(file, label)}
+        aria-label={`View ${label}`}
+        title={`View ${label}`}
+        data-html2canvas-ignore="true"
+      >
+        <Eye size={16} aria-hidden="true" />
+      </button>
+    </span>
+  );
+}
 
 function InfoRow({ no, label, children }) {
   return (
@@ -47,42 +66,32 @@ const normalizeVerificationStatus = (status = 'Submitted') => (
 );
 
 export default function PrintableApplication({ data, regNo = '', verification = null }) {
+  const [documentViewer, setDocumentViewer] = useState(null);
+  const [documentBlobUrl, setDocumentBlobUrl] = useState('');
+  const [documentError, setDocumentError] = useState('');
   const { programme, personal, education, documents, payments, declaration } = data;
   const visibleEducation = education.filter(row => (
     rowHasValue(row, ['examination', 'year', 'classDivision', 'marksGrade', 'institution', 'stateStudied', 'subjects'])
     || row.certificateFile
   ));
-  const visiblePayments = payments.filter(payment => (
-    rowHasValue(payment, ['fee', 'txn_ref', 'txn_date', 'mode', 'status'])
-    || payment.proofFile
-  ));
+  const visiblePayments = payments
+    .map((payment, index) => ({ ...payment, paymentIndex: index }))
+    .filter(payment => (
+      payment.paymentIndex === 0
+      || rowHasValue(payment, ['txn_ref', 'txn_date', 'mode', 'status'])
+      || payment.proofFile
+    ));
   const additionalDocuments = [
     programme.eligibility.includes('ap') && { title: 'AP-EAPCET-2026 Rank Card', file: documents.doc_ap_rank },
     programme.eligibility.includes('tg') && { title: 'TG-EAPCET-2026 Rank Card', file: documents.doc_tg_rank },
     programme.eligibility.includes('jee') && { title: 'JEE (MAINS) Rank Card', file: documents.doc_jee_rank },
     { title: 'Aadhar Card Copy', file: documents.doc_aadhar },
     (personal.category && personal.category !== 'OC') || documents.doc_caste ? { title: 'Caste / Category Certificate', file: documents.doc_caste } : null,
-    (programme.eligibility.includes('others') || documents.doc_others || documents.other_doc_title) && {
-      title: documents.other_doc_title || programme.exams.others.examName || 'Other Competitive Exam Proof',
+    (documents.doc_others || documents.other_doc_title) && {
+      title: documents.other_doc_title || 'Other Supporting Document',
       file: documents.doc_others,
     },
   ].filter(Boolean);
-  const uploadedDocuments = [
-    ...visibleEducation.map(row => ({
-      title: `${row.examination || 'Educational Qualification'} Certificate`,
-      file: row.certificateFile,
-    })),
-    { title: 'AP Rank Card', file: documents.doc_ap_rank },
-    { title: 'TG Rank Card', file: documents.doc_tg_rank },
-    { title: 'JEE Rank Card', file: documents.doc_jee_rank },
-    { title: 'Aadhaar Card', file: documents.doc_aadhar },
-    { title: 'Caste / Category Certificate', file: documents.doc_caste },
-    { title: documents.other_doc_title || 'Other Competitive Exam Proof', file: documents.doc_others },
-    ...visiblePayments.map((payment, index) => ({
-      title: `SBI Collect Receipt ${index + 1}`,
-      file: payment.proofFile,
-    })),
-  ].filter(document => document.file);
   const selectedVerificationStage = normalizeVerificationStatus(verification?.status);
   const verificationFlowStages = [
     'Submitted',
@@ -100,7 +109,53 @@ export default function PrintableApplication({ data, regNo = '', verification = 
         || 'No remarks recorded for selected stage.',
     }]
     : [];
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl = '';
+
+    const loadDocument = async () => {
+      setDocumentBlobUrl('');
+      setDocumentError('');
+      if (!documentViewer?.file) return;
+
+      try {
+        const isBrowserFile = typeof File !== 'undefined' && documentViewer.file instanceof File;
+        if (isBrowserFile) {
+          objectUrl = URL.createObjectURL(documentViewer.file);
+        } else {
+          const source = fileSrc(documentViewer.file);
+          if (!source) throw new Error('Document source is unavailable.');
+          const response = await fetch(source);
+          if (!response.ok) throw new Error('Unable to load this document.');
+          objectUrl = URL.createObjectURL(await response.blob());
+        }
+        if (active) setDocumentBlobUrl(objectUrl);
+      } catch (error) {
+        if (active) setDocumentError(error.message || 'Unable to load this document.');
+      }
+    };
+
+    loadDocument();
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [documentViewer]);
+
+  const openDocumentViewer = (file, label) => setDocumentViewer({ file, label });
+  const closeDocumentViewer = () => setDocumentViewer(null);
+  const printViewedDocument = () => {
+    if (!documentBlobUrl) return;
+    const printWindow = window.open(documentBlobUrl, '_blank');
+    if (printWindow) {
+      printWindow.opener = null;
+      printWindow.addEventListener('load', () => printWindow.print(), { once: true });
+    }
+  };
+
   return (
+    <>
     <div className="printable-application" id="printable-application">
       <div className="print-header">
         <img className="print-logo print-logo-left" src="/jntugv-logo.png" alt="JNTUGV logo" />
@@ -135,7 +190,12 @@ export default function PrintableApplication({ data, regNo = '', verification = 
           <InfoRow no="1." label="Name of the Programme applied">{programme.applied}</InfoRow>
           <InfoRow no="2." label="Eligibility Criteria">
             {programme.eligibility.map(key => (
-              <div key={key}>{key === 'others' && programme.exams.others.examName ? programme.exams.others.examName : EXAM_LABELS[key]}</div>
+              <div key={key}>
+                {EXAM_LABELS[key]}
+                {key === 'others' && programme.exams.others.intermediateMarks
+                  ? ` (${programme.exams.others.intermediateMarks}%)`
+                  : ''}
+              </div>
             ))}
           </InfoRow>
           <tr>
@@ -145,20 +205,27 @@ export default function PrintableApplication({ data, regNo = '', verification = 
             <td>
               <table className="nested-print-table exam-details-table">
                 <tbody>
-                  {programme.eligibility.map(key => (
+                  {programme.eligibility.filter(key => key !== 'others').map(key => (
                     <React.Fragment key={key}>
                       <tr>
-                        <td>{key === 'others' ? value(programme.exams.others.examName) || 'Others' : EXAM_LABELS[key]} Hall Ticket No</td>
+                        <td>{EXAM_LABELS[key]} Hall Ticket No</td>
                         <td>:</td>
                         <td>{value(programme.exams[key].hallTicket)}</td>
                       </tr>
                       <tr>
-                        <td>{key === 'others' ? value(programme.exams.others.examName) || 'Others' : EXAM_LABELS[key]} Rank</td>
+                        <td>{EXAM_LABELS[key]} Rank</td>
                         <td>:</td>
                         <td>{value(programme.exams[key].rank)}</td>
                       </tr>
                     </React.Fragment>
                   ))}
+                  {programme.eligibility.includes('others') && (
+                    <tr>
+                      <td>Intermediate Qualifying Hall Ticket No</td>
+                      <td>:</td>
+                      <td>{value(programme.exams.others.hallTicket)}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </td>
@@ -198,8 +265,9 @@ export default function PrintableApplication({ data, regNo = '', verification = 
         </tbody>
       </table>
 
-      <h4 className="print-section-title">EDUCATIONAL QUALIFICATIONS</h4>
-      <table className="print-data-table">
+      <section className="candidate-print-page-two">
+        <h4 className="print-section-title">EDUCATIONAL QUALIFICATIONS</h4>
+        <table className="print-data-table">
         <thead>
           <tr>
             <th>S.No.</th>
@@ -224,14 +292,14 @@ export default function PrintableApplication({ data, regNo = '', verification = 
               <td>{value(row.institution)}</td>
               <td>{value(row.stateStudied)}</td>
               <td>{value(row.subjects)}</td>
-              <td>{uploaded(row.certificateFile)}</td>
+              <td><UploadStatus file={row.certificateFile} label={`${row.examination || 'education'} certificate`} onView={openDocumentViewer} /></td>
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
 
-      <h4 className="print-section-title">Additional Documents</h4>
-      <table className="print-data-table compact-print-table">
+        <h4 className="print-section-title">Additional Documents</h4>
+        <table className="print-data-table compact-print-table">
         <thead>
           <tr><th>S.No</th><th>Document title</th><th>Document Uploaded Status</th></tr>
         </thead>
@@ -240,63 +308,46 @@ export default function PrintableApplication({ data, regNo = '', verification = 
             <tr key={document.title}>
               <td>{index + 1}</td>
               <td>{document.title}</td>
-              <td>{uploaded(document.file)}</td>
+              <td><UploadStatus file={document.file} label={document.title} onView={openDocumentViewer} /></td>
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
 
-      <h4 className="print-section-title">Uploaded Documents</h4>
-      <table className="print-data-table compact-print-table uploaded-documents-table">
+        <h4 className="print-section-title">Registration Fee Payment details</h4>
+        <table className="print-data-table compact-print-table">
         <thead>
-          <tr><th>S.No</th><th>Document Name</th><th>Uploaded File</th><th>Status</th></tr>
-        </thead>
-        <tbody>
-          {uploadedDocuments.map((document, index) => (
-            <tr key={`${document.title}-${index}`}>
-              <td>{index + 1}</td>
-              <td>{document.title}</td>
-              <td>{fileName(document.file)}</td>
-              <td>{uploaded(document.file)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <h4 className="print-section-title">Registration Fee Payment details</h4>
-      <table className="print-data-table compact-print-table">
-        <thead>
-          <tr><th>S.No</th><th>Application Fee</th><th>SBI Collect Reference No</th><th>Transaction date</th><th>Mode of payment</th><th>Status of payment</th><th>SBI Collect Receipt PDF</th></tr>
+          <tr><th>S.No</th><th>Fee Type</th><th>Amount</th><th>SBI Collect Reference No</th><th>Transaction date</th><th>Mode of payment</th><th>Status of payment</th><th>SBI Collect Receipt PDF</th></tr>
         </thead>
         <tbody>
           {visiblePayments.map((payment, index) => (
             <tr key={index}>
               <td>{index + 1}</td>
-              <td>{value(payment.fee)}</td>
+              <td>{payment.paymentIndex === 0 ? 'Counselling Fee' : 'First-Year Tuition Fee'}</td>
+              <td>{payment.paymentIndex === 0 ? '₹2,000' : '₹1,50,000'}</td>
               <td>{value(payment.txn_ref)}</td>
               <td>{value(payment.txn_date)}</td>
               <td>{value(payment.mode)}</td>
-              <td>{value(payment.status)}</td>
-              <td>{uploaded(payment.proofFile)}</td>
+              <td>{payment.status || 'Pending Verification'}</td>
+              <td><UploadStatus file={payment.proofFile} label={`payment receipt ${index + 1}`} onView={openDocumentViewer} /></td>
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
 
-      <div className="print-declaration">
-        <h4>Declaration</h4>
-        <p>I hereby declare that all the information furnished above is true and correct to the best of my knowledge and belief.</p>
-        <div className="signature-grid">
-          <div>
-            <p>Station: {value(declaration.station)}</p>
-            <p>Date: {value(declaration.date)}</p>
-          </div>
-          <div className="signature-block">
-            {fileSrc(personal.signature) ? <img src={fileSrc(personal.signature)} alt="Signature" /> : <span />}
-            <p>Signature of the applicant</p>
+        <div className="print-declaration">
+          <h4>Declaration</h4>
+          <p>I hereby declare that all the information furnished above is true and correct to the best of my knowledge and belief.</p>
+          <div className="signature-grid">
+            <p><strong>Place:</strong> {value(declaration.station)}</p>
+            <p><strong>Date:</strong> {value(declaration.date)}</p>
+            <div className="signature-block">
+              {fileSrc(personal.signature) ? <img src={fileSrc(personal.signature)} alt="Signature" /> : <span />}
+              <p>Signature of the applicant</p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {verification && (
         <div className="office-verification-copy">
@@ -365,5 +416,37 @@ export default function PrintableApplication({ data, regNo = '', verification = 
         </div>
       )}
     </div>
+    {documentViewer && (
+      <div className="document-viewer-backdrop no-print" role="dialog" aria-modal="true" aria-label={documentViewer.label}>
+        <section className="document-viewer">
+          <header className="document-viewer-header">
+            <div>
+              <strong>{documentViewer.label}</strong>
+              <span>{documentViewer.file?.name || documentViewer.file?.storedName || 'Uploaded document'}</span>
+            </div>
+            <div className="document-viewer-actions">
+              <button type="button" onClick={printViewedDocument} disabled={!documentBlobUrl}>
+                <Printer size={17} aria-hidden="true" />
+                Print document
+              </button>
+              <button type="button" className="document-viewer-close" onClick={closeDocumentViewer} aria-label="Close document viewer">
+                <X size={20} aria-hidden="true" />
+              </button>
+            </div>
+          </header>
+          <div className="document-viewer-body">
+            {!documentBlobUrl && !documentError && <p>Loading document…</p>}
+            {documentError && <p className="document-viewer-error">{documentError}</p>}
+            {documentBlobUrl && (
+              <iframe
+                src={`${documentBlobUrl}#toolbar=1&navpanes=0`}
+                title={documentViewer.label}
+              />
+            )}
+          </div>
+        </section>
+      </div>
+    )}
+    </>
   );
 }

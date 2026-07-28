@@ -1,6 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, CheckCircle2, ClipboardList, GraduationCap, LogIn, ShieldCheck } from 'lucide-react';
+import {
+  CalendarDays,
+  CheckCircle2,
+  ClipboardList,
+  GraduationCap,
+  IndianRupee,
+  LogIn,
+  MapPin,
+  Plane,
+  Users,
+} from 'lucide-react';
 import './Home.css';
 
 export default function Home() {
@@ -14,25 +24,25 @@ export default function Home() {
             <img src="/reutlingen-logo.png" alt="Reutlingen University" />
           </div>
 
-          <div className="hero-badge">Directorate of Admissions</div>
-          <h1 className="hero-title">JNTUGV Admissions Portal</h1>
+          <div className="hero-badge">Admissions 2026-27 · Notification dated 29.07.2026</div>
+          <h1 className="hero-title">Study in India and Germany</h1>
           <p className="hero-subtitle">
-            Directorate of Admissions, Jawaharlal Nehru Technological University Gurajada Vizianagaram manages candidate applications, verification, counselling, and admissions records.
+            Five-year International Integrated Bachelor&apos;s and Master&apos;s Programme offered by JNTU-GV with Knowledge Foundation @ Reutlingen University, Germany.
           </p>
 
           <div className="home-application-card">
-            <span>Applications are commencing shortly</span>
-            <h2>RUKF-IIBMP Admissions 2026-27</h2>
-            <p>International Integrated Bachelor&apos;s and Master&apos;s Program offered by JNTUGV in collaboration with Knowledge Foundation of Reutlingen University, Germany.</p>
+            <span>Online applications commence 30 July 2026</span>
+            <h2>First Batch · RUKF-IIBMP 2026-27</h2>
+            <p>Earn a B.Tech degree from JNTU-GV and an M.Sc degree through Knowledge Foundation @ Reutlingen University in one integrated five-year pathway.</p>
             <Link to="/application-RUKF-IIBMP" className="btn btn-primary">
               <ClipboardList size={18} />
-              Open Application Page
+              Apply Online
             </Link>
           </div>
 
           <div className="notice-panel">
-            <strong>Admissions Notice</strong>
-            <span>Keep scanned certificates, entrance rank cards, Aadhaar, category certificate if applicable, photo, signature, and SBI Collect payment receipt PDF ready before starting the application.</span>
+            <strong>Selection basis</strong>
+            <span>70% of seats through AP EAPCET-2026 rank and 30% through JEE (Main)-2026 rank. Eligibility requires 60% aggregate in Intermediate / 10+2 with Mathematics, Physics and Chemistry.</span>
           </div>
 
           <div className="hero-cta-group">
@@ -61,10 +71,34 @@ export default function Home() {
             </div>
 
             <div className="feature-card">
-              <div className="card-icon"><ShieldCheck size={28} /></div>
-              <h3>Office Verification</h3>
-              <p>Document preview, stage-wise review remarks, print, and PDF download are available for admissions office use.</p>
+              <div className="card-icon"><Users size={28} /></div>
+              <h3>120 Seats</h3>
+              <p>Total intake is 60 seats in Computer Science and Engineering and 60 seats in Electronics and Communication Engineering.</p>
             </div>
+          </div>
+
+          <div className="programme-facts" aria-label="Programme overview">
+            <article>
+              <GraduationCap size={24} />
+              <div>
+                <strong>Five-year integrated programme</strong>
+                <span>First 3 years at JNTU-GV, Vizianagaram; final 2 years at KFRU, Germany.</span>
+              </div>
+            </article>
+            <article>
+              <IndianRupee size={24} />
+              <div>
+                <strong>Published tuition structure</strong>
+                <span>₹1,50,000 per year for the first 3 years and €6,000 per semester for the final 4 semesters.</span>
+              </div>
+            </article>
+            <article>
+              <Plane size={24} />
+              <div>
+                <strong>International study pathway</strong>
+                <span>English-medium programme with the final two years in Germany and an eligible 18-month post-study job-search period.</span>
+              </div>
+            </article>
           </div>
         </div>
       </section>
@@ -74,14 +108,14 @@ export default function Home() {
           <div className="steps-layout">
             <div className="steps-info">
               <h2 className="section-heading text-left">Application Flow</h2>
-              <p className="steps-desc">Use a desktop or laptop for the application form so all tables, uploads, preview, and print sections remain visible.</p>
+              <p className="steps-desc">Apply online and keep the required certificates ready. Admission is provisional and subject to eligibility, original-document verification, counselling, and seat availability.</p>
 
               <div className="timeline">
                 {[
-                  { title: 'Fill Application', desc: 'Enter programme, personal, academic, entrance exam, and declaration details.' },
-                  { title: 'Pay Through SBI Collect', desc: 'Complete fee payment in SBI Collect, enter the reference details, and upload the receipt PDF.' },
-                  { title: 'Upload Proofs', desc: 'Attach education certificates, rank cards, category proof, Aadhaar, photo, signature, and payment receipt.' },
-                  { title: 'Submit and Print', desc: 'Save the registration number, download the PDF, and print the final application.' },
+                  { title: 'Confirm eligibility', desc: 'Indian National / PIO / OCI candidate with at least 60% in Intermediate or equivalent with Mathematics, Physics and Chemistry.' },
+                  { title: 'Complete the online application', desc: 'Enter personal, academic and entrance-exam details and choose the preferred integrated programme.' },
+                  { title: 'Upload supporting documents', desc: 'Provide Class 10 and 10+2 certificates, AP EAPCET / JEE (Main) rank card or scorecard, Aadhaar, photo, signature and applicable certificates.' },
+                  { title: 'Attend counselling in person', desc: 'Bring all original certificates, first-year tuition fee of ₹1,50,000 and counselling fee of ₹2,000.' },
                 ].map((step, index) => (
                   <div key={index} className="timeline-item">
                     <div className="timeline-marker"><CheckCircle2 size={22} /></div>
@@ -98,21 +132,27 @@ export default function Home() {
               <h3><CalendarDays size={20} /> Important Dates</h3>
               <ul className="dates-list">
                 <li>
-                  <span className="date-label">Last Date (No Late Fee)</span>
-                  <span className="date-value">10.07.2026</span>
+                  <span className="date-label">Online Application Opens</span>
+                  <span className="date-value">30.07.2026</span>
                 </li>
                 <li>
-                  <span className="date-label">Last Date (With Rs. 1000 Late Fee)</span>
-                  <span className="date-value">14.07.2026</span>
+                  <span className="date-label">Last Date for Online Application</span>
+                  <span className="date-value">14.08.2026</span>
+                </li>
+                <li>
+                  <span className="date-label">Last Date with ₹1,000 Late Fee</span>
+                  <span className="date-value">18.08.2026</span>
                 </li>
                 <li className="highlight-date">
                   <span className="date-label">Admission Counselling</span>
-                  <span className="date-value">15.07.2026 @ 10:00 AM</span>
+                  <span className="date-value">19.08.2026 · 10:00 AM</span>
                 </li>
               </ul>
               <div className="dates-footer">
-                <strong>Venue:</strong> Directorate of Admissions, JNTUGV, Bobbili Highway, Dwarapudi, Vizianagaram.
+                <MapPin size={18} aria-hidden="true" />
+                <span><strong>Venue:</strong> Directorate of Admissions, JNTU-GV, Dwarapudi, Vizianagaram.</span>
               </div>
+              <p className="dates-note">Candidates must attend in person. Attending counselling does not guarantee admission.</p>
             </aside>
           </div>
         </div>

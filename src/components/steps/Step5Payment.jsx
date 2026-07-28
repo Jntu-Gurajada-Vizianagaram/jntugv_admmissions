@@ -9,14 +9,17 @@ import './Step3Academics.css';
 const MAX_PROOF_FILE_SIZE = 2 * 1024 * 1024;
 
 const PAYMENT_FIELDS = [
-  { key: 'fee', label: 'Application Fee', placeholder: '2000' },
   { key: 'txn_ref', label: 'SBI Collect Reference No', placeholder: 'DU / SBI Collect Reference No' },
   { key: 'txn_date', label: 'Transaction Date', placeholder: 'YYYY-MM-DD', type: 'date' },
   { key: 'mode', label: 'Mode of Payment', placeholder: 'SBI COLLECT' },
-  { key: 'status', label: 'Status of Payment', placeholder: 'SUCCESS' },
 ];
 
-const UPPERCASE_PAYMENT_FIELDS = new Set(['txn_ref', 'mode', 'status']);
+const PAYMENT_OPTIONS = [
+  { title: 'Counselling Fee', amount: '2000', required: true },
+  { title: 'First-Year Tuition Fee', amount: '150000', required: false },
+];
+
+const UPPERCASE_PAYMENT_FIELDS = new Set(['txn_ref', 'mode']);
 
 function PaymentProofUpload({ payment, index, updatePayment }) {
   const inputRef = useRef(null);
@@ -59,35 +62,29 @@ function PaymentProofUpload({ payment, index, updatePayment }) {
 }
 
 export default function Step5Payment({ onNext, onBack }) {
-  const { data, updatePayment, addPaymentRow, removePaymentRow } = useForm();
+  const { data, updatePayment } = useForm();
   const [showErrors, setShowErrors] = useState(false);
 
-  const paymentHasValue = (payment) => (
-    PAYMENT_FIELDS.some(field => String(payment[field.key] || '').trim()) || payment.proofFile
+  const paymentHasDetails = (payment = {}) => (
+    ['txn_ref', 'txn_date', 'mode'].some(key => String(payment[key] || '').trim()) || payment.proofFile
   );
-  const activePayments = data.payments.filter(paymentHasValue);
-  const successfulPayment = activePayments.some(payment => payment.status?.toLowerCase() === 'success');
+  const activePaymentIndexes = PAYMENT_OPTIONS
+    .map((option, index) => (option.required || paymentHasDetails(data.payments[index]) ? index : -1))
+    .filter(index => index >= 0);
 
   const validationMessages = () => {
     const messages = [];
 
-    if (activePayments.length === 0) {
-      messages.push('At least one payment row is required.');
-    }
-
-    activePayments.forEach((payment, index) => {
-      const rowLabel = `Payment row ${data.payments.indexOf(payment) + 1 || index + 1}`;
-      messages.push(positiveAmount(payment.fee, `${rowLabel} application fee`));
+    activePaymentIndexes.forEach((paymentIndex) => {
+      const payment = data.payments[paymentIndex] || {};
+      const option = PAYMENT_OPTIONS[paymentIndex];
+      const rowLabel = option.title;
+      messages.push(positiveAmount(option.amount, `${rowLabel} amount`));
       messages.push(textFormat(payment.txn_ref, `${rowLabel} SBI Collect reference number`));
       messages.push(required(payment.txn_date, `${rowLabel} transaction date is required.`));
       messages.push(textFormat(payment.mode, `${rowLabel} mode of payment`));
-      messages.push(textFormat(payment.status, `${rowLabel} status of payment`));
       if (!payment.proofFile) messages.push(`${rowLabel} SBI Collect payment receipt PDF upload is required.`);
     });
-
-    if (activePayments.length > 0 && !successfulPayment) {
-      messages.push('At least one payment row must have status SUCCESS.');
-    }
 
     return collectMessages(messages);
   };
@@ -133,29 +130,37 @@ export default function Step5Payment({ onNext, onBack }) {
           <div className="sbi-collect-note">
             <strong>SBI Collect Payment Procedure</strong>
             <ol>
-              <li>Open SBI Collect and complete the admission application fee payment using the official university payment category.</li>
+              <li>Open SBI Collect and select the official university payment category.</li>
               <li>Download the SBI Collect receipt after payment completion.</li>
-              <li>Enter the SBI Collect reference number, transaction date, fee amount, payment mode, and payment status below.</li>
+              <li>Pay the mandatory ₹2,000 counselling fee and enter its SBI Collect transaction details below.</li>
+              <li>The ₹1,50,000 first-year tuition fee may also be paid through SBI Collect now, or paid later as instructed by the University.</li>
               <li>Upload only the SBI Collect receipt in PDF format as payment proof.</li>
             </ol>
           </div>
         </div>
 
         <div className="payment-entry-list">
-          {data.payments.map((payment, index) => (
+          {PAYMENT_OPTIONS.map((option, index) => {
+            const payment = data.payments[index] || {};
+            const fieldsRequired = option.required || paymentHasDetails(payment);
+            return (
             <section className="payment-entry-row" key={index}>
               <div className="payment-row-head">
-                <strong>Payment Row {index + 1}</strong>
-                <button type="button" className="table-link-button" onClick={() => removePaymentRow(index)}>
-                  Remove
-                </button>
+                <strong>{option.title}</strong>
+                <span className={option.required ? 'payment-required-badge' : 'payment-optional-badge'}>
+                  {option.required ? 'Mandatory' : 'Optional'}
+                </span>
               </div>
 
               <div className="payment-field-grid">
+                <div className="payment-field">
+                  <span>Fixed Fee Amount</span>
+                  <input type="text" value={`₹${Number(option.amount).toLocaleString('en-IN')}`} readOnly />
+                </div>
                 {PAYMENT_FIELDS.map(field => (
                   <div key={field.key} className="payment-field">
                     {field.type !== 'date' && (
-                      <span>{field.label} <span className="required-star">*</span></span>
+                      <span>{field.label} {fieldsRequired && <span className="required-star">*</span>}</span>
                     )}
                     {field.type === 'date' ? (
                       <CalendarInput
@@ -163,7 +168,7 @@ export default function Step5Payment({ onNext, onBack }) {
                         label={field.label}
                         value={payment[field.key] || ''}
                         onChange={(event) => updatePayment(index, field.key, event.target.value)}
-                        required
+                        required={fieldsRequired}
                         max="2026-12-31"
                       />
                     ) : (
@@ -174,30 +179,25 @@ export default function Step5Payment({ onNext, onBack }) {
                         onChange={(event) => updatePayment(
                           index,
                           field.key,
-                          field.key === 'fee'
-                            ? event.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1')
-                            : UPPERCASE_PAYMENT_FIELDS.has(field.key)
+                          UPPERCASE_PAYMENT_FIELDS.has(field.key)
                               ? event.target.value.toUpperCase()
                               : event.target.value
                         )}
                         style={UPPERCASE_PAYMENT_FIELDS.has(field.key) ? { textTransform: 'uppercase' } : undefined}
-                        required
+                        required={fieldsRequired}
                       />
                     )}
                   </div>
                 ))}
 
                 <div className="payment-field payment-proof-field">
-                  <span>SBI Collect Receipt PDF <span className="required-star">*</span></span>
+                  <span>SBI Collect Receipt PDF {fieldsRequired && <span className="required-star">*</span>}</span>
                   <PaymentProofUpload payment={payment} index={index} updatePayment={updatePayment} />
                 </div>
               </div>
             </section>
-          ))}
-        </div>
-
-        <div className="payment-actions-row">
-          <button type="button" className="btn btn-outline" onClick={addPaymentRow}>+ Add Payment Row</button>
+            );
+          })}
         </div>
       </div>
 

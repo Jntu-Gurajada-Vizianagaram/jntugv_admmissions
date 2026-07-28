@@ -22,7 +22,7 @@ const createInitialData = () => ({
       ap: { hallTicket: '', rank: '' },
       tg: { hallTicket: '', rank: '' },
       jee: { hallTicket: '', rank: '' },
-      others: { examName: '', hallTicket: '', rank: '' },
+      others: { examName: '', hallTicket: '', rank: '', intermediateMarks: '' },
     },
   },
   personal: {
@@ -63,7 +63,7 @@ const createInitialData = () => ({
     doc_caste: null,
   },
   payments: [
-    { fee: '', txn_ref: '', txn_date: '', mode: '', status: '', proofFile: null },
+    { fee: '2000', txn_ref: '', txn_date: '', mode: '', status: '', proofFile: null },
     { fee: '', txn_ref: '', txn_date: '', mode: '', status: '', proofFile: null },
   ],
   paymentStatus: '',
@@ -105,8 +105,16 @@ const createSubmissionPayload = async (data) => ({
     ...row,
     certificateFile: await fileToPayload(row.certificateFile),
   }))),
-  payments: await Promise.all(data.payments.map(async payment => ({
+  payments: await Promise.all(data.payments.map(async (payment, index) => ({
     ...payment,
+    fee: index === 0
+      ? '2000'
+      : index === 1 && (
+        payment.txn_ref
+        || payment.txn_date
+        || payment.mode
+        || payment.proofFile
+      ) ? '150000' : payment.fee,
     proofFile: await fileToPayload(payment.proofFile),
   }))),
   documents: Object.fromEntries(

@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { createReadStream, readFileSync } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import { access } from 'node:fs/promises';
 import crypto from 'node:crypto';
 import path from 'node:path';
@@ -8,28 +8,6 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '..');
-
-const loadDotEnv = (filePath) => {
-  try {
-    const content = readFileSync(filePath, 'utf8');
-    for (const line of content.split(/\r?\n/u)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) continue;
-      const [key, ...valueParts] = trimmed.split('=');
-      const name = key.trim();
-      const rawValue = valueParts.join('=').trim();
-      const value = rawValue.replace(/^['"]|['"]$/g, '');
-      if (name && process.env[name] === undefined) {
-        process.env[name] = value;
-      }
-    }
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-  }
-};
-
-loadDotEnv(path.join(ROOT_DIR, '.env'));
-
 const STATIC_DIR = path.join(ROOT_DIR, 'dist');
 const PORT = Number(process.env.PORT || 5000);
 const PUBLIC_ORIGIN = process.env.PUBLIC_ORIGIN || '*';
@@ -40,13 +18,8 @@ const ADMIN_USERS_FILE = path.join(DATA_DIR, 'admin-users.json');
 const DEFAULT_YEAR = '2026';
 const DEFAULT_PROCESS = 'IIBMP';
 const MAX_BODY_SIZE = 120_000_000;
-const IN_PROGRESS_STATUS = 'Under Review / Verification in Progress';
-const VERIFICATION_STAGES = ['Submitted', IN_PROGRESS_STATUS, 'Verified', 'Needs Correction', 'Rejected'];
-const MANAGEMENT_ROLES = ['admin', 'co-convenor'];
+const VERIFICATION_STAGES = ['Submitted', 'Under Review', 'Verified', 'Needs Correction', 'Rejected'];
 const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || 'jntugv-admissions-local-secret';
-const DEFAULT_ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@2026';
-const DEFAULT_ADMIN_NAME = process.env.ADMIN_NAME || 'Directorate of Admissions Convenor';
 
 const IIBMP_2026_SCHEMA = {
   year: '2026',
@@ -155,14 +128,6 @@ const readJson = async (filePath, fallback) => {
   }
 };
 
-const normalizeStatus = (status = 'Submitted') => (
-  status === 'Under Review' ? IN_PROGRESS_STATUS : status
-);
-
-const normalizeRegistrationNo = (registrationNo = '') => (
-  String(registrationNo).trim().toUpperCase()
-);
-
 const writeJson = async (filePath, payload) => {
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, JSON.stringify(payload, null, 2));
@@ -179,11 +144,11 @@ const verifyPassword = (password, user) => {
 };
 
 const defaultAdminUsers = () => {
-  const password = hashPassword(DEFAULT_ADMIN_PASSWORD);
+  const password = hashPassword('');
   return [{
     id: 'admin',
-    username: DEFAULT_ADMIN_USERNAME,
-    name: DEFAULT_ADMIN_NAME,
+    username: 'admin',
+    name: 'Admissions Administrator',
     role: 'admin',
     active: true,
     salt: password.salt,
@@ -192,41 +157,9 @@ const defaultAdminUsers = () => {
   }];
 };
 
-const syncEnvAdminUser = async (users) => {
-  if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) return users;
-
-  const normalizedUsername = DEFAULT_ADMIN_USERNAME.toLowerCase();
-  const existing = users.find(user => user.id === 'admin')
-    || users.find(user => String(user.username || '').toLowerCase() === normalizedUsername);
-
-  if (existing) {
-    existing.id = 'admin';
-    existing.username = DEFAULT_ADMIN_USERNAME;
-    existing.name = DEFAULT_ADMIN_NAME;
-    existing.role = 'admin';
-    existing.active = true;
-    if (!verifyPassword(DEFAULT_ADMIN_PASSWORD, existing)) {
-      const password = hashPassword(DEFAULT_ADMIN_PASSWORD);
-      existing.salt = password.salt;
-      existing.passwordHash = password.hash;
-    }
-    return users;
-  }
-
-  return [...users, defaultAdminUsers()[0]];
-};
-
 const loadAdminUsers = async () => {
   const users = await readJson(ADMIN_USERS_FILE, null);
-  if (users) {
-    const normalizedUsers = Array.isArray(users) ? users : [users].filter(Boolean);
-    const beforeSync = JSON.stringify(normalizedUsers);
-    const syncedUsers = await syncEnvAdminUser(normalizedUsers);
-    if (JSON.stringify(syncedUsers) !== beforeSync) {
-      await writeJson(ADMIN_USERS_FILE, syncedUsers);
-    }
-    return syncedUsers;
-  }
+  if (users) return users;
   const initialUsers = defaultAdminUsers();
   await writeJson(ADMIN_USERS_FILE, initialUsers);
   return initialUsers;
@@ -240,8 +173,6 @@ const publicUser = (user) => ({
   active: user.active,
   createdAt: user.createdAt,
 });
-
-const canManageAdmissions = (user) => MANAGEMENT_ROLES.includes(user?.role);
 
 const signToken = (payload) => {
   const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
@@ -281,8 +212,8 @@ const requireAdminUser = async (req, res) => {
 const requireSuperAdmin = async (req, res) => {
   const user = await requireAdminUser(req, res);
   if (!user) return null;
-  if (!canManageAdmissions(user)) {
-    json(res, 403, { message: 'Convenor or Co-convenor access required' });
+  if (user.role !== 'admin') {
+    json(res, 403, { message: 'Administrator access required' });
     return null;
   }
   return user;
@@ -291,21 +222,18 @@ const requireSuperAdmin = async (req, res) => {
 const normalizeLegacyRecord = (record) => {
   const year = record.year || DEFAULT_YEAR;
   const processCode = record.processCode || DEFAULT_PROCESS;
-  const status = normalizeStatus(record.status || 'Submitted');
   return {
     id: record.id || record.registrationNo,
     year,
     processCode,
     schemaVersion: record.schemaVersion || `${processCode}-${year}`,
     registrationNo: record.registrationNo,
-    status,
+    status: record.status || 'Submitted',
     submittedAt: record.submittedAt || new Date().toISOString(),
     verificationNotes: record.verificationNotes || '',
     verificationStages: record.verificationStages || {},
     verifiedBy: record.verifiedBy || '',
     verifiedAt: record.verifiedAt || '',
-    assignedOfficerId: record.assignedOfficerId || '',
-    assignedOfficerName: record.assignedOfficerName || '',
     application: record.application || {},
   };
 };
@@ -447,7 +375,7 @@ const summarizeApplication = (record) => ({
   year: record.year,
   processCode: record.processCode,
   registrationNo: record.registrationNo,
-  status: normalizeStatus(record.status),
+  status: record.status,
   candidateName: record.application?.personal?.name || '',
   mobile: record.application?.personal?.mobile || '',
   email: record.application?.personal?.email || '',
@@ -456,10 +384,6 @@ const summarizeApplication = (record) => ({
   submittedAt: record.submittedAt,
   verifiedAt: record.verifiedAt || '',
   verifiedBy: record.verifiedBy || '',
-  assignedOfficerId: record.assignedOfficerId || '',
-  assignedOfficerName: record.assignedOfficerName || '',
-  verificationNotes: record.verificationNotes || '',
-  verificationStages: record.verificationStages || {},
 });
 
 const loadApplications = async (year = DEFAULT_YEAR, processCode = DEFAULT_PROCESS) => {
@@ -475,10 +399,9 @@ const saveApplications = async (records, year = DEFAULT_YEAR, processCode = DEFA
 
 const findApplication = async (registrationNo) => {
   const records = await loadApplications(DEFAULT_YEAR, DEFAULT_PROCESS);
-  const normalizedRegistrationNo = normalizeRegistrationNo(registrationNo);
   return {
     records,
-    record: records.find(item => normalizeRegistrationNo(item.registrationNo) === normalizedRegistrationNo),
+    record: records.find(item => item.registrationNo === registrationNo),
     year: DEFAULT_YEAR,
     processCode: DEFAULT_PROCESS,
   };
@@ -524,9 +447,10 @@ const serveStaticFile = async (res, filePath) => {
   }
 
   const ext = path.extname(resolved).toLowerCase();
+  const isIndex = path.basename(resolved).toLowerCase() === 'index.html';
   res.writeHead(200, {
     'Content-Type': contentTypes[ext] || 'application/octet-stream',
-    ...commonHeaders(),
+    'Cache-Control': isIndex ? 'no-store, max-age=0' : 'public, max-age=31536000, immutable',
   });
   createReadStream(resolved).on('error', () => res.destroy()).pipe(res);
 };
@@ -539,6 +463,9 @@ const serveFrontend = async (url, res) => {
     await access(assetPath);
     return serveStaticFile(res, assetPath);
   } catch {
+    if (requestedPath.startsWith('/assets/') || path.extname(requestedPath)) {
+      return json(res, 404, { message: 'Asset not found' });
+    }
     return serveStaticFile(res, path.join(STATIC_DIR, 'index.html'));
   }
 };
@@ -595,15 +522,11 @@ const server = createServer(async (req, res) => {
       }
 
       if (req.method === 'POST') {
-        if (adminUser.role !== 'admin') {
-          return json(res, 403, { message: 'Only the Convenor can create department logins' });
-        }
-
         const body = await readBody(req);
         const username = String(body.username || '').trim();
         const password = String(body.password || '').trim();
         const name = String(body.name || '').trim();
-        const role = ['co-convenor', 'officer'].includes(body.role) ? body.role : 'officer';
+        const role = body.role === 'admin' ? 'admin' : 'officer';
 
         if (!username || !password || !name) {
           return json(res, 400, { message: 'Name, username, and password are required' });
@@ -634,10 +557,6 @@ const server = createServer(async (req, res) => {
     if (officerMatch && req.method === 'PATCH') {
       const adminUser = await requireSuperAdmin(req, res);
       if (!adminUser) return;
-      if (adminUser.role !== 'admin') {
-        return json(res, 403, { message: 'Only the Convenor can update department logins' });
-      }
-
       const body = await readBody(req);
       const users = await loadAdminUsers();
       const user = users.find(item => item.id === decodeURIComponent(officerMatch[1]));
@@ -646,13 +565,8 @@ const server = createServer(async (req, res) => {
         return json(res, 404, { message: 'Officer not found' });
       }
 
-      if (user.role === 'admin') {
-        return json(res, 403, { message: 'Convenor login is maintained from environment configuration' });
-      }
-
       user.name = body.name ?? user.name;
-      const nextRole = ['co-convenor', 'officer'].includes(body.role) ? body.role : user.role;
-      user.role = nextRole;
+      user.role = body.role === 'admin' ? 'admin' : body.role === 'officer' ? 'officer' : user.role;
       user.active = typeof body.active === 'boolean' ? body.active : user.active;
       if (body.password) {
         const hashed = hashPassword(String(body.password));
@@ -689,8 +603,6 @@ const server = createServer(async (req, res) => {
         verificationStages: {},
         verifiedBy: '',
         verifiedAt: '',
-        assignedOfficerId: '',
-        assignedOfficerName: '',
         application,
       };
 
@@ -708,8 +620,7 @@ const server = createServer(async (req, res) => {
       const status = url.searchParams.get('status') || '';
       const records = await loadApplications(year, processCode);
       const filtered = records
-        .filter(record => canManageAdmissions(adminUser) || record.assignedOfficerId === adminUser.id)
-        .filter(record => !status || normalizeStatus(record.status) === status)
+        .filter(record => !status || record.status === status)
         .filter(record => {
           if (!search) return true;
           return [
@@ -735,44 +646,13 @@ const server = createServer(async (req, res) => {
         return json(res, 404, { message: 'Application not found' });
       }
 
-      if (!canManageAdmissions(adminUser) && record.assignedOfficerId !== adminUser.id) {
-        return json(res, 403, { message: 'Application is not assigned to this verification officer' });
-      }
-
       if (req.method === 'GET') {
-        record.status = normalizeStatus(record.status);
         return json(res, 200, record);
       }
 
       if (req.method === 'PATCH') {
         const body = await readBody(req);
-        const nextStatus = normalizeStatus(body.status || record.status);
-        const assignment = {};
-
-        if (Object.prototype.hasOwnProperty.call(body, 'assignedOfficerId')) {
-          if (!canManageAdmissions(adminUser)) {
-            return json(res, 403, { message: 'Only Convenor or Co-convenor can assign applications to verification officers' });
-          }
-
-          const assignedOfficerId = String(body.assignedOfficerId || '');
-          if (assignedOfficerId) {
-            const users = await loadAdminUsers();
-            const officer = users.find(user => (
-              user.id === assignedOfficerId
-              && user.active
-              && ['co-convenor', 'officer'].includes(user.role)
-            ));
-            if (!officer) {
-              return json(res, 400, { message: 'Selected Co-convenor or Verification Officer is not active or does not exist' });
-            }
-            assignment.assignedOfficerId = officer.id;
-            assignment.assignedOfficerName = officer.name;
-          } else {
-            assignment.assignedOfficerId = '';
-            assignment.assignedOfficerName = '';
-          }
-        }
-
+        const nextStatus = body.status || record.status;
         Object.assign(record, {
           status: nextStatus,
           verificationNotes: body.verificationNotes ?? record.verificationNotes,
@@ -786,7 +666,6 @@ const server = createServer(async (req, res) => {
           verifiedAt: ['Verified', 'Rejected', 'Needs Correction'].includes(nextStatus)
             ? new Date().toISOString()
             : record.verifiedAt,
-          ...assignment,
         });
         await saveApplications(records, year, processCode);
         return json(res, 200, record);
@@ -802,7 +681,10 @@ const server = createServer(async (req, res) => {
         return json(res, 404, { message: 'Application not found' });
       }
 
-      return json(res, 200, summarizeApplication(record));
+      return json(res, 200, {
+        ...summarizeApplication(record),
+        application: record.application,
+      });
     }
 
     const fileMatch = url.pathname.match(/^\/api\/files\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/);
@@ -827,5 +709,5 @@ const server = createServer(async (req, res) => {
 await ensureProcessStore(DEFAULT_YEAR, DEFAULT_PROCESS);
 
 server.listen(PORT, () => {
-  console.log(`JNTUGV admissions portal running at http://localhost:${PORT}`);
+  console.log(`JNTUGV admissions API running at http://localhost:${PORT}`);
 });

@@ -33,7 +33,12 @@ export const adminLogin = async (credentials) => {
   return result;
 };
 
-export const getAdminSession = () => request('/api/admin/session');
+export const getAdminSession = () => {
+  if (!getAdminToken()) {
+    return Promise.resolve({ user: null });
+  }
+  return request('/api/admin/session');
+};
 
 export const submitApplication = (application) => request('/api/applications', {
   method: 'POST',

@@ -180,6 +180,33 @@
   gap: 1rem;
 }
 
+.programme-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.programme-facts article {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: #eef6fb;
+  color: var(--primary-blue);
+}
+
+.programme-facts article div {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.programme-facts article span {
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
 .feature-card {
   display: grid;
   gap: 0.6rem;
@@ -301,6 +328,9 @@
 }
 
 .dates-footer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
   padding: 0.85rem;
   border-radius: var(--radius-sm);
   background: var(--bg-main);
@@ -308,8 +338,22 @@
   line-height: 1.5;
 }
 
+.dates-footer svg {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  color: var(--primary-light);
+}
+
+.dates-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
 @media (max-width: 860px) {
   .grid-cards,
+  .programme-facts,
   .steps-layout {
     grid-template-columns: 1fr;
   }

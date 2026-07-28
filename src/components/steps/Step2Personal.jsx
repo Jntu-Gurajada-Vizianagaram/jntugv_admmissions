@@ -18,8 +18,8 @@ import InlineDocumentUpload from '../InlineDocumentUpload';
 import './Step2Personal.css';
 import './Step3Academics.css';
 
-const MAX_PHOTO_FILE_SIZE = 70 * 1024;
-const MAX_SIGNATURE_FILE_SIZE = 50 * 1024;
+const MAX_PHOTO_FILE_SIZE = 200 * 1024;
+const MAX_SIGNATURE_FILE_SIZE = 70 * 1024;
 const DOB_MIN = '1980-01-01';
 const DOB_MAX = '2010-12-31';
 const DOB_INITIAL_VIEW = '2008-01-01';
@@ -66,7 +66,7 @@ export default function Step2Personal({ onNext, onBack }) {
     const file = event.target.files[0];
     if (!file) return;
     const maxSize = field === 'photo' ? MAX_PHOTO_FILE_SIZE : MAX_SIGNATURE_FILE_SIZE;
-    const maxSizeLabel = field === 'photo' ? '70KB' : '50KB';
+    const maxSizeLabel = field === 'photo' ? '200 KB' : '70 KB';
     if (file.size > maxSize) {
       alert(`File must be less than ${maxSizeLabel}`);
       event.target.value = '';
@@ -228,7 +228,7 @@ export default function Step2Personal({ onNext, onBack }) {
             <div className="upload-preview">
               {data.personal.photo ? <img src={data.personal.photo} alt="Photo" /> : <span>Photo <span className="required-star">*</span></span>}
             </div>
-            <p className="upload-hint">Passport Photo (JPG, &lt;70KB)</p>
+            <p className="upload-hint">Passport Photo (JPG, Max 200 KB)</p>
             <input ref={photoRef} type="file" accept="image/jpeg, image/jpg" hidden onChange={handleFile('photo')} />
           </div>
 
@@ -236,7 +236,7 @@ export default function Step2Personal({ onNext, onBack }) {
             <div className="upload-preview sig-preview">
               {data.personal.signature ? <img src={data.personal.signature} alt="Signature" /> : <span>Signature <span className="required-star">*</span></span>}
             </div>
-            <p className="upload-hint">Signature (JPG, &lt;50KB)</p>
+            <p className="upload-hint">Signature (JPG, Max 70 KB)</p>
             <input ref={sigRef} type="file" accept="image/jpeg, image/jpg" hidden onChange={handleFile('signature')} />
           </div>
         </div>

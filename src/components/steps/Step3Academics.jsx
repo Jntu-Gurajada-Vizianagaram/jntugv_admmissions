@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import { useForm } from '../../context/useForm';
 import { collectMessages, required, textFormat, yearFormat } from '../../utils/validation';
 import './Step3Academics.css';
@@ -42,8 +43,14 @@ function EducationFileInput({ row, index, updateEducation }) {
         {row.certificateFile ? row.certificateFile.name : 'Upload Certificate *'}
       </button>
       {row.certificateFile && (
-        <button type="button" className="table-link-button" onClick={() => updateEducation(index, 'certificateFile', null)}>
-          Remove
+        <button
+          type="button"
+          className="table-link-button"
+          onClick={() => updateEducation(index, 'certificateFile', null)}
+          aria-label={`Remove ${row.examination || 'education'} certificate`}
+          title="Remove certificate"
+        >
+          <X size={17} aria-hidden="true" />
         </button>
       )}
       <input ref={inputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" hidden onChange={handleFile} />
@@ -150,8 +157,14 @@ export default function Step3Academics({ onNext, onBack }) {
                   <EducationFileInput row={edu} index={index} updateEducation={updateEducation} />
                 </td>
                 <td>
-                  <button type="button" className="table-link-button danger" onClick={() => removeEducationRow(edu.id)}>
-                    Remove
+                  <button
+                    type="button"
+                    className="table-link-button danger"
+                    onClick={() => removeEducationRow(edu.id)}
+                    aria-label={`Remove education row ${index + 1}`}
+                    title="Remove education row"
+                  >
+                    <X size={17} aria-hidden="true" />
                   </button>
                 </td>
               </tr>

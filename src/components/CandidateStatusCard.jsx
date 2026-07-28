@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Download } from 'lucide-react';
+import { downloadApplicationPdf } from '../utils/downloadApplicationPdf';
+import PrintableApplication from './PrintableApplication';
 import './CandidateStatusCard.css';
 
 const IN_PROGRESS_STATUS = 'Under Review / Verification in Progress';
@@ -14,6 +17,9 @@ const formatDateTime = (text) => {
 };
 
 export default function CandidateStatusCard({ application }) {
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
+
   if (!application) return null;
 
   const currentStatus = normalizeStatus(application.status);
@@ -26,6 +32,17 @@ export default function CandidateStatusCard({ application }) {
     ? 2
     : currentStatus === IN_PROGRESS_STATUS ? 1 : 0;
   const stageRemark = application.verificationStages?.[currentStatus] || application.verificationNotes || '';
+  const downloadPdf = async () => {
+    setDownloading(true);
+    setDownloadError('');
+    try {
+      await downloadApplicationPdf(application.registrationNo);
+    } catch (error) {
+      setDownloadError(error.message || 'Unable to download the application PDF.');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="candidate-status-card">
@@ -72,6 +89,27 @@ export default function CandidateStatusCard({ application }) {
         <span>Admissions Office Remarks</span>
         <strong>{stageRemark || 'No remarks recorded.'}</strong>
       </div>
+
+      {application.application && (
+        <>
+          <button
+            type="button"
+            className="btn btn-primary candidate-download-button"
+            onClick={downloadPdf}
+            disabled={downloading}
+          >
+            <Download size={18} aria-hidden="true" />
+            {downloading ? 'Preparing PDF…' : 'Download Application PDF'}
+          </button>
+          {downloadError && <div className="status-error">{downloadError}</div>}
+          <div className="candidate-pdf-source" aria-hidden="true">
+            <PrintableApplication
+              data={application.application}
+              regNo={application.registrationNo}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }

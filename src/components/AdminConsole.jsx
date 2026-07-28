@@ -27,90 +27,6 @@ const normalizeStatus = (status = 'Submitted') => (
 const canManageAdmissions = (user) => ['admin', 'co-convenor'].includes(user?.role);
 const roleLabel = (role) => ROLE_LABELS[role] || role;
 
-function UploadedDocumentPreview({ item }) {
-  const [blobUrl, setBlobUrl] = useState('');
-  const [error, setError] = useState('');
-  const type = item.file?.type || '';
-  const isImage = type.startsWith('image/');
-  const isPdf = type === 'application/pdf' || item.file?.name?.toLowerCase().endsWith('.pdf');
-
-  useEffect(() => {
-    let active = true;
-    let objectUrl = '';
-
-    const loadBlob = async () => {
-      if (!item.file?.url) return;
-
-      try {
-        const response = await fetch(item.file.url);
-        if (!response.ok) throw new Error('Unable to load document preview');
-        const blob = await response.blob();
-        objectUrl = URL.createObjectURL(blob);
-        if (active) setBlobUrl(objectUrl);
-      } catch (err) {
-        if (active) setError(err.message || 'Unable to load document preview');
-      }
-    };
-
-    loadBlob();
-
-    return () => {
-      active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [item.file?.url]);
-
-  return (
-    <div className="admin-doc-preview-item">
-      <div className="admin-doc-preview-head">
-        <strong>{item.label}</strong>
-        <span>{item.file?.name || item.file?.storedName || 'Uploaded file'}</span>
-      </div>
-      <div className="admin-doc-blob-frame">
-        {!blobUrl && !error && <span className="admin-muted">Loading preview...</span>}
-        {error && <span className="admin-muted">{error}</span>}
-        {blobUrl && isImage && <img src={blobUrl} alt={item.label} />}
-        {blobUrl && isPdf && <iframe src={`${blobUrl}#toolbar=1&navpanes=0`} title={item.label} />}
-        {blobUrl && !isImage && !isPdf && (
-          <object data={blobUrl} type={type || 'application/octet-stream'}>
-            <span className="admin-muted">Preview is not available for this file type.</span>
-          </object>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function DocumentPreviews({ application }) {
-  const educationDocs = application.education
-    .filter(row => row.certificateFile)
-    .map((row, index) => ({ label: `${row.examination || `Education ${index + 1}`} Certificate`, file: row.certificateFile }));
-
-  const supportingDocs = [
-    { label: 'AP Rank Card', file: application.documents.doc_ap_rank },
-    { label: 'TG Rank Card', file: application.documents.doc_tg_rank },
-    { label: 'JEE Rank Card', file: application.documents.doc_jee_rank },
-    { label: 'Aadhaar Card', file: application.documents.doc_aadhar },
-    { label: 'Caste / Category Certificate', file: application.documents.doc_caste },
-    { label: application.documents.other_doc_title || 'Other Proof', file: application.documents.doc_others },
-  ].filter(item => item.file);
-
-  const paymentDocs = application.payments
-    .filter(payment => payment.proofFile)
-    .map((payment, index) => ({ label: `SBI Collect Receipt ${index + 1}`, file: payment.proofFile }));
-
-  const docs = [...educationDocs, ...supportingDocs, ...paymentDocs];
-
-  return (
-    <div className="admin-doc-preview-grid">
-      {docs.length === 0 && <span className="admin-muted">No uploaded files found.</span>}
-      {docs.map(item => (
-        <UploadedDocumentPreview key={`${item.label}-${item.file?.url}`} item={item} />
-      ))}
-    </div>
-  );
-}
-
 export default function AdminConsole() {
   const [adminUser, setAdminUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
@@ -441,11 +357,6 @@ export default function AdminConsole() {
                     />
                   </label>
                 </div>
-              </section>
-
-              <section className="admin-documents no-print">
-                <h3>Uploaded Documents Preview</h3>
-                <DocumentPreviews application={selectedApplication} />
               </section>
 
               <PrintableApplication

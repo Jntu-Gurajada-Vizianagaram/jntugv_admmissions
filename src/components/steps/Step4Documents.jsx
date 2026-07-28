@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
+import { X } from 'lucide-react'
 import { useForm } from '../../context/useForm'
-import { collectMessages, optionalTextFormat, required } from '../../utils/validation'
+import { collectMessages, optionalTextFormat } from '../../utils/validation'
 import './Step4Documents.css'
 
 const EXAM_DOCS = {
@@ -48,7 +49,15 @@ function DocItem({ docKey, label, num, required = true }) {
         <span className="doc-text">{file ? file.name : 'Click or drag file here'}</span>
         <span className="doc-hint">{file ? `${(file.size / 1024).toFixed(1)} KB` : 'PDF / JPG / PNG - Max 2MB'}</span>
         {file && (
-          <button className="doc-remove" type="button" onClick={e => { e.stopPropagation(); updateDocument(docKey, null) }}>Remove</button>
+          <button
+            className="doc-remove"
+            type="button"
+            onClick={e => { e.stopPropagation(); updateDocument(docKey, null) }}
+            aria-label={`Remove ${label}`}
+            title={`Remove ${label}`}
+          >
+            <X size={17} aria-hidden="true" />
+          </button>
         )}
       </div>
       <input ref={inputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" hidden onChange={e => handleFile(e.target.files[0])} />
@@ -63,7 +72,7 @@ export default function Step4Documents({ onNext, onBack }) {
     .filter(key => EXAM_DOCS[key])
     .map(key => EXAM_DOCS[key])
   const requiresCaste = data.personal.category && data.personal.category !== 'OC'
-  const othersRequired = data.programme.eligibility.includes('others')
+  const othersRequired = false
 
   const requiredDocs = [
     ...selectedRankDocs.map(doc => doc.key),
@@ -79,11 +88,7 @@ export default function Step4Documents({ onNext, onBack }) {
       return data.documents[key] ? '' : `${selectedDoc?.label || key} upload is required.`
     })
 
-    if (othersRequired) {
-      messages.push(required(data.documents.other_doc_title || data.programme.exams.others.examName, 'Other competitive exam document title is required.'))
-    } else {
-      messages.push(optionalTextFormat(data.documents.other_doc_title, 'Other document title'))
-    }
+    messages.push(optionalTextFormat(data.documents.other_doc_title, 'Other document title'))
 
     return collectMessages(messages)
   }
@@ -130,13 +135,13 @@ export default function Step4Documents({ onNext, onBack }) {
           <div className="doc-upload-item">
             <div className="doc-header">
               <span className="doc-num">{docNum++}</span>
-              <span className="doc-name">Others / Other Competitive Exam Proof<RequiredStar required={othersRequired} /></span>
+              <span className="doc-name">Other Supporting Document (Optional)</span>
             </div>
             <div className="form-group" style={{ marginBottom: 8 }}>
               <input
                 type="text"
                 placeholder={othersRequired ? 'Document title / description *' : 'Document title / description'}
-                value={data.documents.other_doc_title || (othersRequired ? data.programme.exams.others.examName : '')}
+                value={data.documents.other_doc_title}
                 onChange={e => updateDocument('other_doc_title', e.target.value)}
               />
             </div>
