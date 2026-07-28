@@ -2,10 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { LogIn, Search } from 'lucide-react';
 import { getApplicationStatus } from '../lib/api';
+import { APPLICATION_OPEN_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import CandidateStatusCard from './CandidateStatusCard';
 import './CandidateLogin.css';
 
 export default function CandidateLogin() {
+  const applicationOpen = useApplicationOpen();
   const [searchParams] = useSearchParams();
   const [registrationNo, setRegistrationNo] = useState((searchParams.get('reg') || '').toUpperCase());
   const [application, setApplication] = useState(null);
@@ -64,10 +66,17 @@ export default function CandidateLogin() {
         <CandidateStatusCard application={application} />
 
         <div className="candidate-login-actions">
-          <Link to="/application-RUKF-IIBMP" className="btn btn-accent">
-            <Search size={18} />
-            New Candidate: Start Application
-          </Link>
+          {applicationOpen ? (
+            <Link to="/application-RUKF-IIBMP" className="btn btn-accent">
+              <Search size={18} />
+              New Candidate: Start Application
+            </Link>
+          ) : (
+            <span className="btn btn-accent application-link-disabled" aria-disabled="true">
+              <Search size={18} />
+              Applications open {APPLICATION_OPEN_LABEL}
+            </span>
+          )}
         </div>
       </section>
     </div>

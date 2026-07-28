@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, Download, Printer, Save } from 'lucide-react';
 import { useForm } from '../context/useForm';
 import { downloadApplicationPdf } from '../utils/downloadApplicationPdf';
+import { APPLICATION_OPEN_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import ProgressBar from './ProgressBar';
 import PrintableApplication from './PrintableApplication';
 import Step1Programme from './steps/Step1Programme';
@@ -15,6 +16,7 @@ import Step6Review from './steps/Step6Review';
 import './ApplicationForm.css';
 
 export default function ApplicationForm() {
+  const applicationOpen = useApplicationOpen();
   const [isDownloading, setIsDownloading] = React.useState(false);
   const {
     data,
@@ -51,6 +53,19 @@ export default function ApplicationForm() {
       setIsDownloading(false);
     }
   };
+
+  if (!applicationOpen) {
+    return (
+      <div className="application-container">
+        <section className="application-notice-page">
+          <div className="application-status-badge">Applications are not open yet</div>
+          <h1>RUKF-IIBMP Admissions 2026-27</h1>
+          <p>Online applications will be enabled automatically on {APPLICATION_OPEN_LABEL}, as scheduled.</p>
+          <Link to="/" className="btn btn-primary">Return to Home</Link>
+        </section>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (

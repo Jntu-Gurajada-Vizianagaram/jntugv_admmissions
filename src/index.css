@@ -144,3 +144,8 @@ a {
   transform: translateY(-0.65rem) scale(0.82);
   color: var(--accent-blue);
 }
+.application-link-disabled {
+  cursor: not-allowed !important;
+  opacity: 0.68;
+  pointer-events: none;
+}

@@ -20,6 +20,7 @@ const DEFAULT_PROCESS = 'IIBMP';
 const MAX_BODY_SIZE = 120_000_000;
 const VERIFICATION_STAGES = ['Submitted', 'Under Review', 'Verified', 'Needs Correction', 'Rejected'];
 const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || 'jntugv-admissions-local-secret';
+const APPLICATION_OPENS_AT = new Date('2026-07-30T17:00:00+05:30').getTime();
 
 const IIBMP_2026_SCHEMA = {
   year: '2026',
@@ -579,6 +580,11 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === 'POST' && url.pathname === '/api/applications') {
+      if (Date.now() < APPLICATION_OPENS_AT) {
+        return json(res, 403, {
+          message: 'Online applications open on 30 July 2026 at 5:00 PM IST.',
+        });
+      }
       const body = await readBody(req);
       const year = String(body.year || body.application?.admissionYear || DEFAULT_YEAR);
       const processCode = String(body.processCode || body.application?.processCode || DEFAULT_PROCESS);

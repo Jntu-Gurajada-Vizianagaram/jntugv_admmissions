@@ -11,9 +11,12 @@ import {
   Plane,
   Users,
 } from 'lucide-react';
+import { APPLICATION_OPEN_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import './Home.css';
 
 export default function Home() {
+  const applicationOpen = useApplicationOpen();
+
   return (
     <div className="home-container">
       <section className="hero-section">
@@ -34,10 +37,17 @@ export default function Home() {
             <span>Online applications commence 30 July 2026</span>
             <h2>First Batch · RUKF-IIBMP 2026-27</h2>
             <p>Earn a B.Tech degree from JNTU-GV and an M.Sc degree through Knowledge Foundation @ Reutlingen University in one integrated five-year pathway.</p>
-            <Link to="/application-RUKF-IIBMP" className="btn btn-primary">
-              <ClipboardList size={18} />
-              Apply Online
-            </Link>
+            {applicationOpen ? (
+              <Link to="/application-RUKF-IIBMP" className="btn btn-primary">
+                <ClipboardList size={18} />
+                Apply Online
+              </Link>
+            ) : (
+              <span className="btn btn-primary application-link-disabled" aria-disabled="true">
+                <ClipboardList size={18} />
+                Apply opens {APPLICATION_OPEN_LABEL}
+              </span>
+            )}
           </div>
 
           <div className="notice-panel">
