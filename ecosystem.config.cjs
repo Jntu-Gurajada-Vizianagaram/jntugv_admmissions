@@ -1,10 +1,11 @@
 module.exports = {
+  nodeInterpreter: process.env.NODE_INTERPRETER || '/root/.nvm/versions/node/v20.19.6/bin/node',
   apps: [
     {
       name: 'jntugv_admissions_frontend',
       script: 'server/frontend.js',
       cwd: '/home/jntugv-admissions/htdocs/admissions.jntugv.edu.in/jntugv_admmissions',
-      interpreter: '/usr/bin/node',
+      interpreter: process.env.NODE_INTERPRETER || '/root/.nvm/versions/node/v20.19.6/bin/node',
       env_production: {
         NODE_ENV: 'production',
         FRONTEND_PORT: 5175,
@@ -16,7 +17,7 @@ module.exports = {
       name: 'jntugv_admissions_api',
       script: 'server/index.js',
       cwd: '/home/jntugv-admissions/htdocs/admissions.jntugv.edu.in/jntugv_admmissions',
-      interpreter: '/usr/bin/node',
+      interpreter: process.env.NODE_INTERPRETER || '/root/.nvm/versions/node/v20.19.6/bin/node',
       env_production: {
         NODE_ENV: 'production',
         PORT: 5000,
