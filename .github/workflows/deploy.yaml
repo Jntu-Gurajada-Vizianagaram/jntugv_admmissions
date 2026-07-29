@@ -83,6 +83,8 @@ jobs:
           npm run build
 
           if command -v pm2 >/dev/null 2>&1; then
+            pm2 delete "$PM2_FRONTEND_APP_NAME" >/dev/null 2>&1 || true
+            pm2 delete "$PM2_APP_NAME" >/dev/null 2>&1 || true
             pm2 startOrReload ecosystem.config.cjs --env production --update-env
             pm2 save
           elif command -v systemctl >/dev/null 2>&1 && systemctl list-unit-files "$SERVICE_NAME.service" --no-legend | grep -q "$SERVICE_NAME.service"; then
