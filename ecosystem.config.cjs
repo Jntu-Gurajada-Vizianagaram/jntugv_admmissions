@@ -1,6 +1,18 @@
 module.exports = {
   apps: [
     {
+      name: 'jntugv_admissions_frontend',
+      script: 'server/frontend.js',
+      cwd: '/home/jntugv-admissions/htdocs/admissions.jntugv.edu.in/jntugv_admmissions',
+      interpreter: '/usr/bin/node',
+      env_production: {
+        NODE_ENV: 'production',
+        FRONTEND_PORT: 4173,
+      },
+      max_memory_restart: '256M',
+      restart_delay: 5000,
+    },
+    {
       name: 'jntugv_admissions_api',
       script: 'server/index.js',
       cwd: '/home/jntugv-admissions/htdocs/admissions.jntugv.edu.in/jntugv_admmissions',

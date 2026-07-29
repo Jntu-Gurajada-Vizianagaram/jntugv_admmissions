@@ -10,7 +10,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "start:frontend": "node server/frontend.js"
   },
   "dependencies": {
     "dompurify": "3.4.12",
