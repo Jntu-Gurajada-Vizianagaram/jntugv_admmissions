@@ -7,7 +7,7 @@ module.exports = {
       interpreter: '/usr/bin/node',
       env_production: {
         NODE_ENV: 'production',
-        FRONTEND_PORT: 4173,
+        FRONTEND_PORT: 5175,
       },
       max_memory_restart: '256M',
       restart_delay: 5000,
