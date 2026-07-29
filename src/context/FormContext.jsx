@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { FormContext } from './FormContextObject'
-import { submitApplication } from '../lib/api'
+import { saveApplicantDraft, submitApplication } from '../lib/api'
 
 const DRAFT_DB_NAME = 'jntugv-admissions-drafts'
 const DRAFT_STORE_NAME = 'drafts'
@@ -184,6 +184,7 @@ export function FormProvider({ children }) {
   const [draftStatus, setDraftStatus] = useState('Checking saved draft...')
   const [lastDraftSavedAt, setLastDraftSavedAt] = useState('')
   const [hasSavedDraft, setHasSavedDraft] = useState(false)
+  const [applicantLogin, setApplicantLogin] = useState(null)
   const draftReadyRef = useRef(false)
   const autosaveTimerRef = useRef(null)
 
@@ -193,20 +194,39 @@ export function FormProvider({ children }) {
   const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 6))
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1))
 
-  const saveDraft = async (nextData = data, nextStepValue = currentStep, mode = 'manual') => {
+  const saveDraft = useCallback(async (nextData = data, nextStepValue = currentStep, mode = 'manual') => {
     setDraftStatus(mode === 'auto' ? 'Autosaving draft...' : 'Saving draft...')
     const savedAt = new Date().toISOString()
 
     await persistDraft({
       data: nextData,
       currentStep: nextStepValue,
+      applicantLogin,
       savedAt,
     })
 
     setLastDraftSavedAt(savedAt)
     setHasSavedDraft(true)
     setDraftStatus(`Draft saved ${formatDraftTime(savedAt)}`)
-  }
+
+    if (mode === 'auto') return null
+
+    const email = String(nextData.personal?.email || '').trim()
+    if (!email) {
+      if (mode !== 'auto') setDraftStatus('Local draft saved. Enter candidate email to save server draft and receive login details.')
+      return null
+    }
+
+    const serverDraft = await saveApplicantDraft({
+      year: '2026',
+      processCode: 'IIBMP',
+      currentStep: nextStepValue,
+      application: await createSubmissionPayload(nextData),
+    })
+    setApplicantLogin(serverDraft.applicant)
+    setDraftStatus(serverDraft.message || `Draft saved ${formatDraftTime(serverDraft.savedAt || savedAt)}`)
+    return serverDraft
+  }, [applicantLogin, currentStep, data])
 
   useEffect(() => {
     let cancelled = false
@@ -219,6 +239,7 @@ export function FormProvider({ children }) {
         if (draft?.data) {
           setData(draft.data)
           setCurrentStep(Number(draft.currentStep) || 1)
+          setApplicantLogin(draft.applicantLogin || null)
           setLastDraftSavedAt(draft.savedAt || '')
           setHasSavedDraft(true)
           setDraftStatus(`Draft restored${draft.savedAt ? ` from ${formatDraftTime(draft.savedAt)}` : ''}`)
@@ -259,7 +280,7 @@ export function FormProvider({ children }) {
         window.clearTimeout(autosaveTimerRef.current)
       }
     }
-  }, [data, currentStep, submitted])
+  }, [data, currentStep, saveDraft, submitted])
 
   const updateEducation = (index, field, value) => {
     setData(prev => {
@@ -339,7 +360,47 @@ export function FormProvider({ children }) {
     setHasSavedDraft(false)
     setLastDraftSavedAt('')
     setDraftStatus('Draft cleared')
+    setApplicantLogin(null)
     removeDraft().catch(() => {})
+  }
+
+  const restoreServerDraft = async (draft, applicant = null) => {
+    if (!draft?.data) return
+    if (applicant) setApplicantLogin(applicant)
+    setData(prev => ({
+      ...prev,
+      ...draft.data,
+      personal: {
+        ...prev.personal,
+        ...(draft.data.personal || {}),
+      },
+      programme: {
+        ...prev.programme,
+        ...(draft.data.programme || {}),
+      },
+      documents: {
+        ...prev.documents,
+        ...(draft.data.documents || {}),
+      },
+      declaration: {
+        ...prev.declaration,
+        ...(draft.data.declaration || {}),
+      },
+      education: Array.isArray(draft.data.education) && draft.data.education.length ? draft.data.education : prev.education,
+      payments: Array.isArray(draft.data.payments) && draft.data.payments.length ? draft.data.payments : prev.payments,
+    }))
+    setCurrentStep(Number(draft.currentStep) || 1)
+    setLastDraftSavedAt(draft.savedAt || '')
+    setHasSavedDraft(true)
+    setSubmitted(false)
+    setRegNo('')
+    setDraftStatus(`Server draft restored${draft.savedAt ? ` from ${formatDraftTime(draft.savedAt)}` : ''}`)
+    await persistDraft({
+      data: draft.data,
+      currentStep: Number(draft.currentStep) || 1,
+      applicantLogin: applicant,
+      savedAt: draft.savedAt || new Date().toISOString(),
+    }).catch(() => {})
   }
 
   return (
@@ -362,6 +423,8 @@ export function FormProvider({ children }) {
       submitForm,
       saveDraft,
       resetForm,
+      restoreServerDraft,
+      applicantLogin,
       regNo,
       submissionError,
       isSubmitting,

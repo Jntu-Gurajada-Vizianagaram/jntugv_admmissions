@@ -1,0 +1,33 @@
+module.exports = {
+  apps: [
+    {
+      name: 'jntugv_admissions_api',
+      script: 'server/index.js',
+      cwd: '/home/jntugv-admissions/htdocs/admissions.jntugv.edu.in/jntugv_admmissions',
+      interpreter: '/usr/bin/node',
+      env_production: {
+        NODE_ENV: 'production',
+        PORT: 5000,
+        PUBLIC_ORIGIN: 'https://admissions.jntugv.edu.in',
+        DB_HOST: process.env.DB_HOST,
+        DB_PORT: process.env.DB_PORT,
+        DB_NAME: process.env.DB_NAME,
+        DB_USER: process.env.DB_USER,
+        DB_PASSWORD: process.env.DB_PASSWORD,
+        MAIL_FROM: process.env.MAIL_FROM,
+        ADMIN_NOTIFY_EMAIL: process.env.ADMIN_NOTIFY_EMAIL,
+        SMTP_HOST: process.env.SMTP_HOST,
+        SMTP_PORT: process.env.SMTP_PORT,
+        SMTP_SECURE: process.env.SMTP_SECURE,
+        SMTP_USER: process.env.SMTP_USER,
+        SMTP_PASS: process.env.SMTP_PASS,
+        ADMIN_TOKEN_SECRET: process.env.ADMIN_TOKEN_SECRET,
+        ADMIN_USERNAME: process.env.ADMIN_USERNAME,
+        ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
+        ADMIN_NAME: process.env.ADMIN_NAME,
+      },
+      max_memory_restart: '512M',
+      restart_delay: 5000,
+    },
+  ],
+};

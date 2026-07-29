@@ -27,10 +27,12 @@ jobs:
       DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
       DEPLOY_PATH: /home/jntugv-admissions/htdocs/admissions.jntugv.edu.in/jntugv_admmissions
       SERVICE_NAME: jntugv-admissions
+      PM2_APP_NAME: jntugv_admissions_api
+      PM2_DEV_FRONTEND_APP_NAME: jntugv_admissions_frontend
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -63,17 +65,37 @@ jobs:
             -i ~/.ssh/deploy_key \
             -p "$DEPLOY_PORT" \
             "$DEPLOY_USER@$DEPLOY_HOST" \
-            "DEPLOY_PATH='$DEPLOY_PATH' SERVICE_NAME='$SERVICE_NAME' bash -s" <<'REMOTE'
+            "DEPLOY_PATH='$DEPLOY_PATH' SERVICE_NAME='$SERVICE_NAME' PM2_APP_NAME='$PM2_APP_NAME' PM2_DEV_FRONTEND_APP_NAME='$PM2_DEV_FRONTEND_APP_NAME' bash -s" <<'REMOTE'
           set -euo pipefail
 
           cd "$DEPLOY_PATH"
+          if [ -f /etc/jntugv-admissions.env ]; then
+            set -a
+            . /etc/jntugv-admissions.env
+            set +a
+          fi
+
           git fetch --prune origin main
           git checkout main
           git pull --ff-only origin main
 
           npm ci
           npm run build
-          sudo systemctl restart "$SERVICE_NAME"
+
+          if command -v pm2 >/dev/null 2>&1 && pm2 describe "$PM2_APP_NAME" >/dev/null 2>&1; then
+            pm2 delete "$PM2_DEV_FRONTEND_APP_NAME" >/dev/null 2>&1 || true
+            pm2 startOrReload ecosystem.config.cjs --env production --update-env
+            pm2 save
+          elif command -v systemctl >/dev/null 2>&1 && systemctl list-unit-files "$SERVICE_NAME.service" --no-legend | grep -q "$SERVICE_NAME.service"; then
+            sudo systemctl restart "$SERVICE_NAME"
+          elif command -v pm2 >/dev/null 2>&1; then
+            pm2 delete "$PM2_DEV_FRONTEND_APP_NAME" >/dev/null 2>&1 || true
+            pm2 startOrReload ecosystem.config.cjs --env production --update-env
+            pm2 save
+          else
+            echo "Neither systemd service '$SERVICE_NAME' nor pm2 is available on the server."
+            exit 1
+          fi
 
           for attempt in $(seq 1 15); do
             if curl --fail --silent --show-error http://127.0.0.1:5000/api/health >/dev/null; then

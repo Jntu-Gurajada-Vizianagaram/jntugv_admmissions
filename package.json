@@ -6,19 +6,22 @@
   "scripts": {
     "dev": "vite",
     "dev:api": "node server/index.js",
+    "dev:api:local": "node --env-file=.env.local server/index.js",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "start": "node server/index.js"
   },
   "dependencies": {
+    "dompurify": "3.4.12",
     "framer-motion": "^12.42.2",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.23.0",
+    "mysql2": "^3.23.2",
+    "nodemailer": "^9.0.3",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "react-router-dom": "^7.18.1"
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",

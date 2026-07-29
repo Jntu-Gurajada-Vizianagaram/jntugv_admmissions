@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link } from '../lib/router';
 import { CheckCircle2, Download, Printer, Save } from 'lucide-react';
 import { useForm } from '../context/useForm';
 import { downloadApplicationPdf } from '../utils/downloadApplicationPdf';
@@ -31,6 +31,7 @@ export default function ApplicationForm() {
     saveDraft,
     draftStatus,
     isSubmitting,
+    applicantLogin,
   } = useForm();
 
   const renderStep = () => {
@@ -67,14 +68,23 @@ export default function ApplicationForm() {
     );
   }
 
+  if (!applicantLogin) {
+    return (
+      <div className="application-container">
+        <section className="application-notice-page">
+          <div className="application-status-badge">Applicant login required</div>
+          <h1>Register before filling the application</h1>
+          <p>Register first to receive your applicant username and password by email. Login with those details to fill, save, and continue your application later.</p>
+          <Link to="/register" className="btn btn-primary">Register or Login</Link>
+        </section>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="application-container">
-        <div className="application-device-block">
-          <h2>Open on Desktop or Laptop</h2>
-          <p>This application form and PDF preview are designed for a wider screen so all columns, uploads, and print formatting remain visible.</p>
-        </div>
-        <div className="form-wrapper submission-success desktop-only-application">
+        <div className="form-wrapper submission-success">
           <div className="success-mark"><CheckCircle2 size={34} /></div>
           <h2>Application Submitted</h2>
           <p>Your RUKF-IIBMP application has been saved successfully.</p>
@@ -95,7 +105,7 @@ export default function ApplicationForm() {
               <Download size={18} />
               {isDownloading ? 'Preparing PDF...' : 'Download PDF'}
             </button>
-            <Link to={`/candidate-login?reg=${encodeURIComponent(regNo)}`} className="btn btn-primary">Submitted Login</Link>
+            <Link to={`/status?reg=${encodeURIComponent(regNo)}`} className="btn btn-primary">View Status</Link>
             <button type="button" className="btn btn-outline" onClick={resetForm}>New Application</button>
           </div>
           <div className="submitted-print-preview">
@@ -129,12 +139,8 @@ export default function ApplicationForm() {
           <span>Keep scanned certificates, entrance rank cards, Aadhaar, category certificate if applicable, photo, signature, and SBI Collect payment receipt PDF ready before starting the application.</span>
         </div>
       </section>
-      <div className="application-device-block">
-        <h2>Open on Desktop or Laptop</h2>
-        <p>This application form is available only on desktop or laptop screens for better visibility and accurate document verification.</p>
-      </div>
       <motion.div 
-        className="form-wrapper desktop-only-application"
+        className="form-wrapper"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
@@ -143,6 +149,7 @@ export default function ApplicationForm() {
           <div>
             <h2 className="form-page-title">RUKF-IIBMP Application Form 2026</h2>
             <p className="draft-status">{draftStatus}</p>
+            <p className="draft-status">Applicant login: {applicantLogin.username}. Use Save Draft to preserve progress on the server.</p>
           </div>
           <button
             type="button"

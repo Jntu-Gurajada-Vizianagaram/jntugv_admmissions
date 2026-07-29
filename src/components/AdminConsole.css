@@ -41,7 +41,8 @@
   font-weight: 800;
 }
 
-.admin-login-card input {
+.admin-login-card input,
+.admin-login-card select {
   width: 100%;
   padding: 0.75rem;
   border: 1px solid var(--border-color);
@@ -58,14 +59,25 @@
   font-size: 0.9rem;
 }
 
-.admin-login-support a {
+.admin-login-support a,
+.admin-login-support button {
   color: var(--primary-blue);
   font-weight: 800;
   text-decoration: none;
 }
 
-.admin-login-support a:hover {
+.admin-login-support a:hover,
+.admin-login-support button:hover {
   text-decoration: underline;
+}
+
+.password-reset-panel {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-main);
 }
 
 .admin-hero {

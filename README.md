@@ -29,10 +29,18 @@ Install dependencies:
 npm install
 ```
 
+For local development without MySQL, use JSON storage:
+
+```bash
+STORAGE_DRIVER=json
+PORT=5000
+PUBLIC_ORIGIN=http://localhost:5173
+```
+
 Start the backend API:
 
 ```bash
-npm run dev:api
+npm run dev:api:local
 ```
 
 Start the frontend:
@@ -88,6 +96,28 @@ Use `.env.production.example` as the template for the server environment. In pro
 PUBLIC_ORIGIN=https://admissions.jntugv.edu.in
 ```
 
+Database-backed production storage is enabled when `DB_NAME` and `DB_USER` are set. The application still stores the full application JSON for existing fetch screens, and also writes searchable MySQL rows for applications, payments, department logins, and serialized counters.
+
+```text
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=iibmp-admissions
+DB_USER=jntugv-admissions
+DB_PASSWORD=your-database-password
+```
+
+Email notifications are enabled when `SMTP_HOST` is set. The server emails candidates after submission and status changes, and emails department login credentials when a Convenor creates a Co-convenor or Verification Officer.
+
+```text
+MAIL_FROM=admissions@jntugv.edu.in
+ADMIN_NOTIFY_EMAIL=da@jntugv.edu.in
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=admissions@jntugv.edu.in
+SMTP_PASS=your-smtp-password
+```
+
 Recommended server layout:
 
 ```text
@@ -99,8 +129,22 @@ Deployment templates are included:
 
 - `deploy/jntugv-admissions.service` for systemd.
 - `deploy/nginx-admissions.jntugv.edu.in.conf` for Nginx reverse proxy.
+- `ecosystem.config.cjs` for PM2 production hosting.
 
 Point `admissions.jntugv.edu.in` to the server, proxy it to `127.0.0.1:5000`, then enable HTTPS using the institution SSL certificate or Certbot.
+
+If PM2 is used in production, do not run the Vite development server publicly. Build the frontend and serve it through the Node API:
+
+```bash
+set -a
+. /etc/jntugv-admissions.env
+set +a
+npm ci
+npm run build
+pm2 delete jntugv_admissions_frontend || true
+pm2 startOrReload ecosystem.config.cjs --env production --update-env
+pm2 save
+```
 
 ## SBI Collect Payment
 

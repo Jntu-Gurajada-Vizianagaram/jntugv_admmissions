@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { ClipboardList } from 'lucide-react';
+import { Link, NavLink } from '../lib/router';
+import { LogIn } from 'lucide-react';
 import { APPLICATION_OPEN_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import './ModernHeader.css';
 
@@ -21,22 +21,16 @@ export default function ModernHeader() {
         <nav className="header-nav">
           <ul>
             <li><NavLink to="/">Home</NavLink></li>
-            <li>
-              {applicationOpen
-                ? <NavLink to="/application-RUKF-IIBMP">Application</NavLink>
-                : <span className="application-link-disabled" title={`Opens ${APPLICATION_OPEN_LABEL}`}>Application</span>}
-            </li>
-            <li><NavLink to="/candidate-login">Submitted Login</NavLink></li>
             <li><NavLink to="/admin">Department Login</NavLink></li>
             <li>
               {applicationOpen ? (
-                <Link to="/application-RUKF-IIBMP" className="btn btn-primary nav-cta">
-                  <ClipboardList size={16} />
-                  Apply
+                <Link to="/login" className="btn btn-primary nav-cta">
+                  <LogIn size={16} />
+                  Applicant Login
                 </Link>
               ) : (
                 <span className="btn btn-primary nav-cta application-link-disabled" title={`Opens ${APPLICATION_OPEN_LABEL}`}>
-                  <ClipboardList size={16} />
+                  <LogIn size={16} />
                   Opens 30 Jul, 5 PM
                 </span>
               )}

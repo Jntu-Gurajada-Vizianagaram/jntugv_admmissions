@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 
 export const APPLICATION_OPENS_AT = new Date('2026-07-30T17:00:00+05:30').getTime()
 export const APPLICATION_OPEN_LABEL = '30 July 2026 at 5:00 PM IST'
+const APPLICATION_OPEN_OVERRIDE = import.meta.env.VITE_APPLICATION_OPEN_OVERRIDE === 'true'
 
-export const isApplicationOpen = () => Date.now() >= APPLICATION_OPENS_AT
+export const isApplicationOpen = () => APPLICATION_OPEN_OVERRIDE || Date.now() >= APPLICATION_OPENS_AT
 
 export const useApplicationOpen = () => {
   const [isOpen, setIsOpen] = useState(isApplicationOpen)

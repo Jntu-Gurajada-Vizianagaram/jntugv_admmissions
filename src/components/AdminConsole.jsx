@@ -1,15 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, FileSearch, LogOut, Printer, RefreshCw, UserPlus } from 'lucide-react';
+import { useSearchParams } from '../lib/routerHooks';
 import {
   adminLogin,
   clearAdminToken,
+  completeAdminPasswordReset,
   createVerificationOfficer,
   getAdminApplication,
   getAdminSession,
   listAdminApplications,
   listVerificationOfficers,
+  requestAdminPasswordReset,
   updateAdminApplication,
   updateVerificationOfficer,
+  validateAdminPasswordReset,
 } from '../lib/api';
 import PrintableApplication from './PrintableApplication';
 import './AdminConsole.css';
@@ -28,9 +32,16 @@ const canManageAdmissions = (user) => ['admin', 'co-convenor'].includes(user?.ro
 const roleLabel = (role) => ROLE_LABELS[role] || role;
 
 export default function AdminConsole() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const resetToken = searchParams.get('resetToken') || '';
   const [adminUser, setAdminUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
+  const [showResetForm, setShowResetForm] = useState(false);
+  const [resetForm, setResetForm] = useState({ name: '', username: '', role: 'Verification Officer', contactNumber: '' });
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetUser, setResetUser] = useState(null);
+  const [newPasswordForm, setNewPasswordForm] = useState({ password: '', confirmPassword: '' });
   const [records, setRecords] = useState([]);
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
@@ -79,6 +90,45 @@ export default function AdminConsole() {
       setAdminUser(result.user);
     } catch (err) {
       setLoginError(err.message || 'Unable to login');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitPasswordReset = async (event) => {
+    event.preventDefault();
+    setLoginError('');
+    setResetMessage('');
+    setLoading(true);
+    try {
+      const result = await requestAdminPasswordReset(resetForm);
+      setResetMessage(result.message || 'Password reset request sent.');
+      setResetForm({ name: '', username: '', role: 'Verification Officer', contactNumber: '' });
+      setShowResetForm(false);
+    } catch (err) {
+      setLoginError(err.message || 'Unable to send password reset request');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const completePasswordSetup = async (event) => {
+    event.preventDefault();
+    setLoginError('');
+    setResetMessage('');
+    if (newPasswordForm.password !== newPasswordForm.confirmPassword) {
+      setLoginError('Passwords do not match.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await completeAdminPasswordReset({ token: resetToken, password: newPasswordForm.password });
+      setResetMessage(result.message || 'Password updated. You can now login.');
+      setNewPasswordForm({ password: '', confirmPassword: '' });
+      setResetUser(null);
+      setSearchParams({});
+    } catch (err) {
+      setLoginError(err.message || 'Unable to update password');
     } finally {
       setLoading(false);
     }
@@ -142,10 +192,22 @@ export default function AdminConsole() {
   };
 
   useEffect(() => {
+    if (resetToken) return;
     getAdminSession()
       .then(result => setAdminUser(result.user))
       .catch(() => clearAdminToken());
-  }, []);
+  }, [resetToken]);
+
+  useEffect(() => {
+    if (!resetToken) return;
+    clearAdminToken();
+    setAdminUser(null);
+    setLoginError('');
+    setResetMessage('');
+    validateAdminPasswordReset(resetToken)
+      .then(result => setResetUser(result.user))
+      .catch(err => setLoginError(err.message || 'Password setup link is invalid or expired.'));
+  }, [resetToken]);
 
   useEffect(() => {
     if (adminUser) {
@@ -177,6 +239,48 @@ export default function AdminConsole() {
     pending: records.filter(record => ['Submitted', 'Under Review', 'Under Review / Verification in Progress'].includes(record.status)).length,
   }), [records]);
 
+  if (resetToken) {
+    return (
+      <div className="admin-login-page">
+        <form className="admin-login-card" onSubmit={completePasswordSetup}>
+          <p className="page-kicker">Department Login</p>
+          <h2>Set New Password</h2>
+          {resetUser ? (
+            <p>{resetUser.name} | {resetUser.username}</p>
+          ) : (
+            <p>Validating password setup link.</p>
+          )}
+          {loginError && <div className="status-error">{loginError}</div>}
+          {resetMessage && <div className="status-success">{resetMessage}</div>}
+          {resetUser && (
+            <>
+              <label>
+                New Password
+                <input
+                  type="password"
+                  value={newPasswordForm.password}
+                  onChange={(event) => setNewPasswordForm(prev => ({ ...prev, password: event.target.value }))}
+                />
+              </label>
+              <label>
+                Confirm Password
+                <input
+                  type="password"
+                  value={newPasswordForm.confirmPassword}
+                  onChange={(event) => setNewPasswordForm(prev => ({ ...prev, confirmPassword: event.target.value }))}
+                />
+              </label>
+              <button type="submit" className="btn btn-primary" disabled={loading}>Update Password</button>
+            </>
+          )}
+          <button type="button" className="btn btn-outline" onClick={() => setSearchParams({})}>
+            Back to Login
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   if (!adminUser) {
     return (
       <div className="admin-login-page">
@@ -185,6 +289,7 @@ export default function AdminConsole() {
           <h2>Department Login</h2>
           <p>Login to retrieve applications, assign Co-convenors and Verification Officers, and maintain admissions verification.</p>
           {loginError && <div className="status-error">{loginError}</div>}
+          {resetMessage && <div className="status-success">{resetMessage}</div>}
           <label>
             Username
             <input value={loginForm.username} onChange={(event) => setLoginForm(prev => ({ ...prev, username: event.target.value }))} />
@@ -196,10 +301,37 @@ export default function AdminConsole() {
           <button type="submit" className="btn btn-primary" disabled={loading}>Login</button>
           <div className="admin-login-support">
             <span>Forgot password?</span>
-            <a href="mailto:da@jntugv.edu.in?subject=Admissions%20Portal%20Password%20Reset%20Request&body=Please%20reset%20my%20admissions%20portal%20login.%0A%0AName%3A%0AUsername%20/%20Email%3A%0ARole%20(Convenor%20/%20Co-convenor%20/%20Verification%20Officer)%3A%0AContact%20Number%3A">
-              Request reset by email
-            </a>
+            <button type="button" className="table-link-button" onClick={() => setShowResetForm(prev => !prev)}>
+              Request reset
+            </button>
           </div>
+          {showResetForm && (
+            <div className="password-reset-panel">
+              <label>
+                Name
+                <input value={resetForm.name} onChange={(event) => setResetForm(prev => ({ ...prev, name: event.target.value }))} />
+              </label>
+              <label>
+                Username / Email
+                <input value={resetForm.username} onChange={(event) => setResetForm(prev => ({ ...prev, username: event.target.value }))} />
+              </label>
+              <label>
+                Role
+                <select value={resetForm.role} onChange={(event) => setResetForm(prev => ({ ...prev, role: event.target.value }))}>
+                  <option>Convenor</option>
+                  <option>Co-convenor</option>
+                  <option>Verification Officer</option>
+                </select>
+              </label>
+              <label>
+                Contact Number
+                <input value={resetForm.contactNumber} onChange={(event) => setResetForm(prev => ({ ...prev, contactNumber: event.target.value }))} />
+              </label>
+              <button type="button" className="btn btn-outline" onClick={submitPasswordReset} disabled={loading}>
+                Send Reset Request
+              </button>
+            </div>
+          )}
         </form>
       </div>
     );

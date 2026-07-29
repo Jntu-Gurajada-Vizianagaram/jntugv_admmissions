@@ -33,6 +33,20 @@ export const adminLogin = async (credentials) => {
   return result;
 };
 
+export const requestAdminPasswordReset = (payload) => request('/api/admin/password-reset-request', {
+  method: 'POST',
+  body: JSON.stringify(payload),
+});
+
+export const validateAdminPasswordReset = (token) => (
+  request(`/api/admin/password-reset?${new URLSearchParams({ token }).toString()}`)
+);
+
+export const completeAdminPasswordReset = (payload) => request('/api/admin/password-reset', {
+  method: 'POST',
+  body: JSON.stringify(payload),
+});
+
 export const getAdminSession = () => {
   if (!getAdminToken()) {
     return Promise.resolve({ user: null });
@@ -52,6 +66,21 @@ export const getApplicationStatus = (registrationNo) => (
 export const getAdmissionSchema = (year = '2026', processCode = 'IIBMP') => (
   request(`/api/schemas/${encodeURIComponent(year)}/${encodeURIComponent(processCode)}`)
 );
+
+export const saveApplicantDraft = (payload) => request('/api/applicant/drafts', {
+  method: 'POST',
+  body: JSON.stringify(payload),
+});
+
+export const registerApplicant = (payload) => request('/api/applicant/register', {
+  method: 'POST',
+  body: JSON.stringify(payload),
+});
+
+export const applicantLogin = (credentials) => request('/api/applicant/login', {
+  method: 'POST',
+  body: JSON.stringify(credentials),
+});
 
 export const listAdminApplications = ({ year = '2026', processCode = 'IIBMP', search = '', status = '' } = {}) => {
   const params = new URLSearchParams({ year, processCode });

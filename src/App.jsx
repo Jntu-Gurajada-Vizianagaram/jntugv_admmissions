@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from './lib/router';
 import { FormProvider } from './context/FormContext';
 import Home from './components/Home';
 import ApplicationForm from './components/ApplicationForm';
@@ -18,7 +18,10 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/application-RUKF-IIBMP" element={<ApplicationForm />} />
-              <Route path="/candidate-login" element={<CandidateLogin />} />
+              <Route path="/register" element={<CandidateLogin />} />
+              <Route path="/login" element={<CandidateLogin />} />
+              <Route path="/status" element={<CandidateLogin />} />
+              <Route path="/candidate-login" element={<Navigate to="/register" replace />} />
               <Route path="/admin" element={<AdminConsole />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
