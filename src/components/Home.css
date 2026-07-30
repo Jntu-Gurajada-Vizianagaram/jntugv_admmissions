@@ -231,7 +231,8 @@
 .administration-profile-image img {
   width: 64px;
   height: 64px;
-  object-fit: contain;
+  border-radius: 6px;
+  object-fit: cover;
 }
 
 .administration-profile-content {
@@ -495,7 +496,7 @@
   .administration-profile-image img {
     width: 100%;
     height: 100%;
-    padding: 1rem;
+    border-radius: 0;
   }
 
   .administration-profile-content {
