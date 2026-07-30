@@ -1,35 +1,48 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, NavLink } from '../lib/router';
-import { LogIn } from 'lucide-react';
+import { LogIn, Menu, X } from 'lucide-react';
 import { APPLICATION_COMMENCE_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import './ModernHeader.css';
 
 export default function ModernHeader() {
   const applicationOpen = useApplicationOpen();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = () => setMenuOpen(false);
+
   return (
     <header className="modern-header">
       <div className="header-container">
         <div className="header-logo-section">
-          <Link to="/" className="logo-link">
+          <Link to="/" className="logo-link" onClick={closeMenu}>
             <img className="modern-emblem" src="/jntugv-logo.png" alt="JNTUGV" />
             <div className="header-titles">
               <h1 className="header-main-title">Directorate of Admissions</h1>
               <h2 className="header-sub-title">Jawaharlal Nehru Technological University Gurajada Vizianagaram</h2>
             </div>
           </Link>
+          <button
+            type="button"
+            className="header-menu-button"
+            aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-controls="primary-navigation"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
-        <nav className="header-nav">
+        <nav id="primary-navigation" className={`header-nav ${menuOpen ? 'is-open' : ''}`}>
           <ul>
-            <li><NavLink to="/">Home</NavLink></li>
-            <li><NavLink to="/administration">Administration</NavLink></li>
-            <li><NavLink to="/programmes">Programmes</NavLink></li>
-            <li><NavLink to="/notifications">Notifications</NavLink></li>
-            <li><NavLink to="/latest-admissions">Latest Admissions</NavLink></li>
-            <li><NavLink to="/contact">Contact Us</NavLink></li>
-            <li><NavLink to="/admin">Department Login</NavLink></li>
+            <li><NavLink to="/" onClick={closeMenu}>Home</NavLink></li>
+            <li><NavLink to="/administration" onClick={closeMenu}>Administration</NavLink></li>
+            <li><NavLink to="/programmes" onClick={closeMenu}>Programmes</NavLink></li>
+            <li><NavLink to="/notifications" onClick={closeMenu}>Notifications</NavLink></li>
+            <li><NavLink to="/latest-admissions" onClick={closeMenu}>Latest Admissions</NavLink></li>
+            <li><NavLink to="/contact" onClick={closeMenu}>Contact Us</NavLink></li>
+            <li><NavLink to="/admin" onClick={closeMenu}>Department Login</NavLink></li>
             <li>
               {applicationOpen ? (
-                <Link to="/login" className="btn btn-primary nav-cta">
+                <Link to="/login" className="btn btn-primary nav-cta" onClick={closeMenu}>
                   <LogIn size={16} />
                   Applicant Login
                 </Link>

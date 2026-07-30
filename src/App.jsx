@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from './lib/router';
+import { useLocation } from './lib/routerHooks';
 import { FormProvider } from './context/FormContext';
 import Home from './components/Home';
 import ApplicationForm from './components/ApplicationForm';
@@ -8,10 +10,21 @@ import AdminConsole from './components/AdminConsole';
 import NotFound from './components/NotFound';
 import './App.css';
 
+function ScrollToTop() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [location.pathname]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <Router>
       <FormProvider>
+        <ScrollToTop />
         <div className="app-container">
           <ModernHeader />
           <main className="main-content-area">
