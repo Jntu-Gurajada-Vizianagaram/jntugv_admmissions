@@ -41,6 +41,8 @@
 }
 
 .doc-upload-zone {
+  position: relative;
+  min-height: 152px;
   border: 2px dashed var(--border-color);
   border-radius: var(--radius-md);
   padding: clamp(1rem, 2vw, 1.5rem) 1rem;
@@ -53,6 +55,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.25rem;
 }
 
 .doc-upload-zone:hover {
@@ -72,10 +75,15 @@
 }
 
 .doc-text {
+  width: 100%;
+  min-width: 0;
+  padding: 0 2.25rem;
   font-size: 0.9rem;
   color: var(--text-main);
   margin-bottom: 0.25rem;
-  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .doc-hint {
@@ -84,19 +92,28 @@
 }
 
 .doc-remove {
-  margin-top: 0.75rem;
-  background: none;
-  border: none;
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  background: #fee2e2;
+  border: 0;
   color: #ef4444;
-  font-size: 0.85rem;
-  font-weight: 500;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  padding: 0;
+  border-radius: var(--radius-sm);
 }
 
 .doc-remove:hover {
-  background: #fee2e2;
+  background: #fecaca;
+}
+
+.doc-remove svg {
+  display: block;
 }
 
 .form-group input[type="text"] {

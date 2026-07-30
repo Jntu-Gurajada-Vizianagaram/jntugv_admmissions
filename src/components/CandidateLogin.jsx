@@ -6,6 +6,7 @@ import { applicantLogin, getApplicationStatus, registerApplicant } from '../lib/
 import { useForm } from '../context/useForm';
 import { APPLICATION_COMMENCE_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import CandidateStatusCard from './CandidateStatusCard';
+import PasswordField from './PasswordField';
 import './CandidateLogin.css';
 
 export default function CandidateLogin() {
@@ -184,11 +185,11 @@ export default function CandidateLogin() {
             </label>
             <label>
               Applicant Password
-              <input
-                type="password"
+              <PasswordField
                 value={applicantCredentials.password}
                 onChange={(event) => setApplicantCredentials(prev => ({ ...prev, password: event.target.value }))}
                 placeholder="Password received by email"
+                autoComplete="current-password"
               />
             </label>
             <button type="submit" className="btn btn-primary" disabled={loading || !applicationOpen}>

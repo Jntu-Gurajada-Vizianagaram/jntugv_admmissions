@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from '../lib/router';
-import { CheckCircle2, Download, Printer, Save } from 'lucide-react';
+import { CheckCircle2, Download, Monitor, Printer, Save } from 'lucide-react';
 import { useForm } from '../context/useForm';
 import { downloadApplicationPdf } from '../utils/downloadApplicationPdf';
 import { APPLICATION_COMMENCE_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
@@ -84,7 +84,13 @@ export default function ApplicationForm() {
   if (submitted) {
     return (
       <div className="application-container">
-        <div className="form-wrapper submission-success">
+        <section className="application-device-block">
+          <Monitor size={42} />
+          <h1>Desktop or Laptop Required</h1>
+          <p>The application form and submitted application preview are available only on larger screens for accuracy while reviewing documents and data.</p>
+          <Link to="/login" className="btn btn-primary">Return to Login</Link>
+        </section>
+        <div className="form-wrapper submission-success application-desktop-only">
           <div className="success-mark"><CheckCircle2 size={34} /></div>
           <h2>Application Submitted</h2>
           <p>Your RUKF-IIBMP application has been saved successfully.</p>
@@ -118,6 +124,14 @@ export default function ApplicationForm() {
 
   return (
     <div className="application-container">
+      <section className="application-device-block">
+        <Monitor size={42} />
+        <h1>Desktop or Laptop Required</h1>
+        <p>The RUKF-IIBMP application form is not available on mobile phones or small screens. Please continue from a desktop, laptop, or larger tablet to avoid mistakes while uploading documents.</p>
+        <Link to="/login" className="btn btn-primary">Return to Login</Link>
+      </section>
+
+      <div className="application-desktop-only">
       <section className="application-notice-page">
         <div className="application-brand-row" aria-label="University logos">
           <div>
@@ -179,6 +193,7 @@ export default function ApplicationForm() {
           </AnimatePresence>
         </div>
       </motion.div>
+      </div>
     </div>
   );
 }

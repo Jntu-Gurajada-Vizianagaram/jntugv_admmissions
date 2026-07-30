@@ -16,6 +16,7 @@ import {
   validateAdminPasswordReset,
 } from '../lib/api';
 import PrintableApplication from './PrintableApplication';
+import PasswordField from './PasswordField';
 import './AdminConsole.css';
 
 const STATUSES = ['Submitted', 'Under Review / Verification in Progress', 'Verified', 'Needs Correction', 'Rejected'];
@@ -256,18 +257,18 @@ export default function AdminConsole() {
             <>
               <label>
                 New Password
-                <input
-                  type="password"
+                <PasswordField
                   value={newPasswordForm.password}
                   onChange={(event) => setNewPasswordForm(prev => ({ ...prev, password: event.target.value }))}
+                  autoComplete="new-password"
                 />
               </label>
               <label>
                 Confirm Password
-                <input
-                  type="password"
+                <PasswordField
                   value={newPasswordForm.confirmPassword}
                   onChange={(event) => setNewPasswordForm(prev => ({ ...prev, confirmPassword: event.target.value }))}
+                  autoComplete="new-password"
                 />
               </label>
               <button type="submit" className="btn btn-primary" disabled={loading}>Update Password</button>
@@ -296,7 +297,7 @@ export default function AdminConsole() {
           </label>
           <label>
             Password
-            <input type="password" value={loginForm.password} onChange={(event) => setLoginForm(prev => ({ ...prev, password: event.target.value }))} />
+            <PasswordField value={loginForm.password} onChange={(event) => setLoginForm(prev => ({ ...prev, password: event.target.value }))} />
           </label>
           <button type="submit" className="btn btn-primary" disabled={loading}>Login</button>
           <div className="admin-login-support">
@@ -366,7 +367,12 @@ export default function AdminConsole() {
           <form className="officer-form" onSubmit={addOfficer}>
             <input placeholder="Name" value={officerForm.name} onChange={(event) => setOfficerForm(prev => ({ ...prev, name: event.target.value }))} />
             <input placeholder="Username" value={officerForm.username} onChange={(event) => setOfficerForm(prev => ({ ...prev, username: event.target.value }))} />
-            <input type="password" placeholder="Password" value={officerForm.password} onChange={(event) => setOfficerForm(prev => ({ ...prev, password: event.target.value }))} />
+            <PasswordField
+              placeholder="Password"
+              value={officerForm.password}
+              onChange={(event) => setOfficerForm(prev => ({ ...prev, password: event.target.value }))}
+              autoComplete="new-password"
+            />
             <select value={officerForm.role} onChange={(event) => setOfficerForm(prev => ({ ...prev, role: event.target.value }))}>
               <option value="officer">Verification Officer</option>
               <option value="co-convenor">Co-convenor</option>

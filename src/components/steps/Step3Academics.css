@@ -49,12 +49,15 @@
 
 .education-upload-cell {
   display: grid;
-  gap: 0.45rem;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 0.35rem;
+  align-items: center;
   min-width: 170px;
 }
 
 .edu-upload-button {
   width: 100%;
+  min-height: 42px;
   padding: 0.7rem;
   border: 1px dashed var(--border-color);
   border-radius: var(--radius-sm);
@@ -63,6 +66,9 @@
   cursor: pointer;
   font: inherit;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .edu-upload-button.uploaded {
@@ -78,6 +84,19 @@
   cursor: pointer;
   font-weight: 700;
   padding: 0.25rem;
+}
+
+.education-upload-cell .table-link-button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+}
+
+.education-upload-cell .table-link-button svg,
+.table-link-button.danger svg {
+  display: block;
 }
 
 .table-link-button.danger {

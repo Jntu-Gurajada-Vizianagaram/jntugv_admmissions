@@ -19,6 +19,10 @@
   display: none;
 }
 
+.application-desktop-only {
+  min-width: 0;
+}
+
 .application-notice-page {
   display: grid;
   gap: 1rem;
@@ -92,6 +96,36 @@
 
 .application-notice-panel strong {
   color: #78350f;
+}
+
+.application-device-block {
+  gap: 1rem;
+  min-height: 60vh;
+  place-items: center;
+  align-content: center;
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  box-shadow: var(--shadow-sm);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.application-device-block svg {
+  color: var(--accent-blue);
+}
+
+.application-device-block h1 {
+  margin: 0;
+  color: var(--primary-blue);
+  font-size: 1.45rem;
+}
+
+.application-device-block p {
+  max-width: 560px;
+  margin: 0;
+  line-height: 1.6;
 }
 
 .form-page-title {
@@ -328,6 +362,16 @@
 
   .success-actions .btn {
     width: auto;
+  }
+}
+
+@media (max-width: 1023px) {
+  .application-device-block {
+    display: grid;
+  }
+
+  .application-desktop-only {
+    display: none !important;
   }
 }
 

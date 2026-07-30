@@ -15,7 +15,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
   padding: 0.45rem;
   border: 1px dashed var(--border-color);
   border-radius: var(--radius-md);
@@ -30,7 +30,9 @@
 
 .inline-upload-button {
   min-width: 0;
-  display: inline-flex;
+  min-height: 40px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
   align-items: center;
   gap: 0.55rem;
   width: 100%;
@@ -60,11 +62,18 @@
   height: 34px;
   display: grid;
   place-items: center;
+  align-self: center;
+  justify-self: center;
+  flex: 0 0 auto;
   border: 0;
   border-radius: var(--radius-sm);
   background: #fee2e2;
   color: #dc2626;
   cursor: pointer;
+}
+
+.inline-upload-remove svg {
+  display: block;
 }
 
 .inline-upload-hint {
