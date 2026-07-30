@@ -97,8 +97,18 @@ jobs:
             set +a
           fi
 
-          if [ -n "${NODE_INTERPRETER:-}" ] && [ -x "$NODE_INTERPRETER" ]; then
+          export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+          if [ -s "$NVM_DIR/nvm.sh" ]; then
+            . "$NVM_DIR/nvm.sh"
+            nvm install 20.19.6
+            nvm use 20.19.6
+            export NODE_INTERPRETER="$(command -v node)"
+          elif [ -n "${NODE_INTERPRETER:-}" ] && [ -x "$NODE_INTERPRETER" ]; then
             export PATH="$(dirname "$NODE_INTERPRETER"):$PATH"
+          elif ! node -e "const [major, minor] = process.versions.node.split('.').map(Number); process.exit(major > 20 || (major === 20 && minor >= 19) ? 0 : 1)" >/dev/null 2>&1; then
+            echo "Node.js 20.19.0 or newer is required on the deploy user PATH."
+            echo "Install Node 20 for $USER, or set NODE_INTERPRETER in /etc/jntugv-admissions.env to an executable Node 20 path."
+            exit 1
           fi
 
           git fetch --prune origin main
