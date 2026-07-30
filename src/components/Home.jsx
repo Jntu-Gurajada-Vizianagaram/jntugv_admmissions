@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from '../lib/router';
 import {
+  Bell,
+  Building2,
   CalendarDays,
   CheckCircle2,
   ClipboardList,
@@ -8,24 +10,34 @@ import {
   FileText,
   GraduationCap,
   IndianRupee,
+  Landmark,
   MapPin,
   Plane,
+  ShieldCheck,
   Users,
 } from 'lucide-react';
 import { APPLICATION_COMMENCE_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import './Home.css';
 
-const studentReferencePdfs = [
+const notifications = [
   {
-    title: 'Notification and Timeline',
-    description: 'Official admissions notification with the published schedule and important dates.',
+    title: 'RUKF-IIBMP Admissions 2026-27 Notification and Timeline',
+    description: 'Official notification with application dates, counselling schedule, and admission instructions.',
     url: 'https://api.jntugv.edu.in/media/1785324527457-5e5544e2-38a8-41d0-8337-0e4bb8e2dd8a.pdf',
   },
   {
-    title: 'Information Booklet',
-    description: 'Programme details, eligibility, fee structure, documents, and counselling information.',
+    title: 'RUKF-IIBMP Information Booklet 2026-27',
+    description: 'Eligibility, programme structure, fee details, documents, selection method, and counselling process.',
     url: 'https://api.jntugv.edu.in/media/1785324382397-7f161667-50e2-408d-a98f-62c0a9c03b7b.pdf',
   },
+];
+
+const administration = [
+  'Vice-Chancellor',
+  'Rector',
+  'Registrar',
+  'Directorate of Admissions',
+  'Digital Monitoring Cell',
 ];
 
 export default function Home() {
@@ -33,7 +45,7 @@ export default function Home() {
 
   return (
     <div className="home-container">
-      <section className="hero-section">
+      <section className="directorate-hero">
         <div className="hero-content">
           <div className="brand-row" aria-label="University logos">
             <img src="/jntugv-logo.png" alt="JNTUGV" />
@@ -41,16 +53,18 @@ export default function Home() {
             <img src="/reutlingen-logo.png" alt="Reutlingen University" />
           </div>
 
-          <div className="hero-badge">Admissions 2026-27 · Notification dated 29.07.2026</div>
-          <h1 className="hero-title">Study in India and Germany</h1>
+          <div className="hero-badge">Directorate of Admissions</div>
+          <h1 className="hero-title">Jawaharlal Nehru Technological University Gurajada Vizianagaram</h1>
           <p className="hero-subtitle">
-            Five-year International Integrated Bachelor&apos;s and Master&apos;s Programme offered by JNTU-GV with Knowledge Foundation @ Reutlingen University, Germany.
+            Official admissions portal for university admission notifications, applicant registration, online application submission, counselling updates, and admissions administration.
           </p>
 
-          <div className="home-application-card">
-            <span>Online applications commence 30 July 2026</span>
-            <h2>First Batch · RUKF-IIBMP 2026-27</h2>
-            <p>Earn a B.Tech degree from JNTU-GV and an M.Sc degree through Knowledge Foundation @ Reutlingen University in one integrated five-year pathway.</p>
+          <div className="directorate-action-panel">
+            <div>
+              <span>Latest Admissions</span>
+              <h2>RUKF-IIBMP Admissions 2026-27</h2>
+              <p>Five-year International Integrated Bachelor&apos;s and Master&apos;s Programme offered by JNTU-GV with Knowledge Foundation @ Reutlingen University, Germany.</p>
+            </div>
             {applicationOpen ? (
               <Link to="/register" className="btn btn-primary">
                 <ClipboardList size={18} />
@@ -63,25 +77,67 @@ export default function Home() {
               </span>
             )}
           </div>
+        </div>
+      </section>
 
-          <div className="notice-panel">
-            <strong>Selection basis</strong>
-            <span>70% of seats through AP EAPCET-2026 rank and 30% through JEE (Main)-2026 rank. Eligibility requires 60% aggregate in Intermediate / 10+2 with Mathematics, Physics and Chemistry.</span>
+      <section className="directorate-section">
+        <div className="container-inner">
+          <div className="directorate-overview-grid">
+            <article className="directorate-overview-card">
+              <div className="card-icon"><Building2 size={26} /></div>
+              <h2>About Directorate</h2>
+              <p>
+                The Directorate of Admissions coordinates admission notifications, online application workflows, applicant support, document verification, counselling schedules, and admission records for notified programmes of JNTU-GV.
+              </p>
+            </article>
+            <article className="directorate-overview-card">
+              <div className="card-icon"><Landmark size={26} /></div>
+              <h2>University</h2>
+              <p>
+                Jawaharlal Nehru Technological University Gurajada Vizianagaram serves the academic, administrative, and student support needs of technical education through structured university processes and transparent admissions.
+              </p>
+            </article>
+            <article className="directorate-overview-card">
+              <div className="card-icon"><ShieldCheck size={26} /></div>
+              <h2>Administration</h2>
+              <p>
+                Admissions activities are supported through university administration, Directorate officers, verification teams, and the Digital Monitoring Cell for reliable digital service delivery.
+              </p>
+            </article>
           </div>
         </div>
       </section>
 
-      <section className="student-reference-section" aria-labelledby="student-reference-heading">
+      <section className="administration-section">
         <div className="container-inner">
           <div className="section-title-row">
             <div>
-              <h2 id="student-reference-heading" className="section-heading text-left">Student References</h2>
-              <p>Read the official admission documents before registration and payment.</p>
+              <h2 className="section-heading text-left">Administration</h2>
+              <p>Admissions processes are carried out under the university administrative structure with dedicated digital and verification support.</p>
+            </div>
+          </div>
+          <div className="administration-list">
+            {administration.map((item) => (
+              <article key={item}>
+                <CheckCircle2 size={20} />
+                <span>{item}</span>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="notifications-section" aria-labelledby="notifications-heading">
+        <div className="container-inner">
+          <div className="section-title-row">
+            <div>
+              <h2 id="notifications-heading" className="section-heading text-left">Notifications</h2>
+              <p>Official admission documents for student reference.</p>
             </div>
           </div>
 
           <div className="pdf-reference-grid">
-            {studentReferencePdfs.map((pdf) => (
+            {notifications.map((pdf) => (
               <article className="pdf-reference-card" key={pdf.url}>
                 <div className="pdf-reference-header">
                   <div className="card-icon"><FileText size={24} /></div>
@@ -100,77 +156,58 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="details" className="features-section">
+      <section className="latest-admissions-section">
         <div className="container-inner">
-          <h2 className="section-heading">Programmes Offered</h2>
-          <div className="grid-cards">
-            <div className="feature-card">
-              <div className="card-icon"><GraduationCap size={28} /></div>
-              <h3>B.Tech (CSE) + M.Sc (PSE)</h3>
-              <p>Computer Science and Engineering with Professional Software Engineering specialization.</p>
-            </div>
-
-            <div className="feature-card">
-              <div className="card-icon"><GraduationCap size={28} /></div>
-              <h3>B.Tech (ECE) + M.Sc (DBM)</h3>
-              <p>Electronics and Communication Engineering with Digital Business Management specialization.</p>
-            </div>
-
-            <div className="feature-card">
-              <div className="card-icon"><Users size={28} /></div>
-              <h3>120 Seats</h3>
-              <p>Total intake is 60 seats in Computer Science and Engineering and 60 seats in Electronics and Communication Engineering.</p>
-            </div>
-          </div>
-
-          <div className="programme-facts" aria-label="Programme overview">
-            <article>
-              <GraduationCap size={24} />
-              <div>
-                <strong>Five-year integrated programme</strong>
-                <span>First 3 years at JNTU-GV, Vizianagaram; final 2 years at KFRU, Germany.</span>
+          <div className="latest-admissions-layout">
+            <div className="latest-admissions-main">
+              <div className="section-title-row">
+                <div>
+                  <h2 className="section-heading text-left">Latest Admissions</h2>
+                  <p>Current online admission process hosted by the Directorate of Admissions.</p>
+                </div>
               </div>
-            </article>
-            <article>
-              <IndianRupee size={24} />
-              <div>
-                <strong>Published tuition structure</strong>
-                <span>₹1,50,000 per year for the first 3 years and €6,000 per semester for the final 4 semesters.</span>
-              </div>
-            </article>
-            <article>
-              <Plane size={24} />
-              <div>
-                <strong>International study pathway</strong>
-                <span>English-medium programme with the final two years in Germany and an eligible 18-month post-study job-search period.</span>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
 
-      <section className="steps-section">
-        <div className="container-inner">
-          <div className="steps-layout">
-            <div className="steps-info">
-              <h2 className="section-heading text-left">Application Flow</h2>
-              <p className="steps-desc">Apply online and keep the required certificates ready. Admission is provisional and subject to eligibility, original-document verification, counselling, and seat availability.</p>
-
-              <div className="timeline">
-                {[
-                  { title: 'Confirm eligibility', desc: 'Indian National / PIO / OCI candidate with at least 60% in Intermediate or equivalent with Mathematics, Physics and Chemistry.' },
-                  { title: 'Complete the online application', desc: 'Enter personal, academic and entrance-exam details and choose the preferred integrated programme.' },
-                  { title: 'Upload supporting documents', desc: 'Provide Class 10 and 10+2 certificates, AP EAPCET / JEE (Main) rank card or scorecard, Aadhaar, photo, signature and applicable certificates.' },
-                  { title: 'Attend counselling in person', desc: 'Bring all original certificates, first-year tuition fee of ₹1,50,000 and counselling fee of ₹2,000.' },
-                ].map((step, index) => (
-                  <div key={index} className="timeline-item">
-                    <div className="timeline-marker"><CheckCircle2 size={22} /></div>
-                    <div className="timeline-content">
-                      <h4>{step.title}</h4>
-                      <p>{step.desc}</p>
-                    </div>
+              <div className="admission-programme-card">
+                <div className="admission-programme-header">
+                  <div className="card-icon"><Bell size={24} /></div>
+                  <div>
+                    <span>Admissions 2026-27</span>
+                    <h3>RUKF-IIBMP International Integrated Programme</h3>
                   </div>
-                ))}
+                </div>
+                <p>
+                  First batch admissions for B.Tech + M.Sc integrated pathways in collaboration with Knowledge Foundation @ Reutlingen University, Germany.
+                </p>
+                <div className="programme-facts" aria-label="Programme overview">
+                  <article>
+                    <GraduationCap size={24} />
+                    <div>
+                      <strong>Programmes Offered</strong>
+                      <span>B.Tech (CSE) + M.Sc (PSE) and B.Tech (ECE) + M.Sc (DBM).</span>
+                    </div>
+                  </article>
+                  <article>
+                    <Users size={24} />
+                    <div>
+                      <strong>120 Seats</strong>
+                      <span>60 seats in Computer Science and Engineering and 60 seats in Electronics and Communication Engineering.</span>
+                    </div>
+                  </article>
+                  <article>
+                    <IndianRupee size={24} />
+                    <div>
+                      <strong>Published Fee Structure</strong>
+                      <span>Rs. 1,50,000 per year for first 3 years and EUR 6,000 per semester for final 4 semesters.</span>
+                    </div>
+                  </article>
+                  <article>
+                    <Plane size={24} />
+                    <div>
+                      <strong>International Pathway</strong>
+                      <span>First 3 years at JNTU-GV and final 2 years through KFRU, Germany.</span>
+                    </div>
+                  </article>
+                </div>
               </div>
             </div>
 
@@ -178,7 +215,7 @@ export default function Home() {
               <h3><CalendarDays size={20} /> Important Dates</h3>
               <ul className="dates-list">
                 <li>
-                  <span className="date-label">Online Application Opens</span>
+                  <span className="date-label">Online Application Commences</span>
                   <span className="date-value">30.07.2026</span>
                 </li>
                 <li>
@@ -186,12 +223,12 @@ export default function Home() {
                   <span className="date-value">14.08.2026</span>
                 </li>
                 <li>
-                  <span className="date-label">Last Date with ₹1,000 Late Fee</span>
+                  <span className="date-label">Last Date with Rs. 1,000 Late Fee</span>
                   <span className="date-value">18.08.2026</span>
                 </li>
                 <li className="highlight-date">
                   <span className="date-label">Admission Counselling</span>
-                  <span className="date-value">19.08.2026 · 10:00 AM</span>
+                  <span className="date-value">19.08.2026 at 10:00 AM</span>
                 </li>
               </ul>
               <div className="dates-footer">
