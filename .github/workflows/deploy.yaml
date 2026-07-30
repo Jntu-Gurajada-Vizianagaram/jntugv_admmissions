@@ -48,6 +48,9 @@ jobs:
           npm run lint
           npm run build
 
+      - name: Package frontend build
+        run: tar -czf dist.tar.gz dist
+
       - name: Configure SSH
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -64,7 +67,18 @@ jobs:
           ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Pull, build and restart on server
+      - name: Upload frontend build
+        run: |
+          scp \
+            -i ~/.ssh/deploy_key \
+            -P "$DEPLOY_PORT" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            dist.tar.gz \
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/jntugv-admissions-dist.tar.gz"
+
+      - name: Pull, install and restart on server
         run: |
           ssh \
             -i ~/.ssh/deploy_key \
@@ -93,9 +107,10 @@ jobs:
 
           node -v
           npm -v
-          npm ci --include=dev
-          npm run build
-          npm prune --omit=dev
+          npm ci --omit=dev
+          rm -rf dist
+          tar -xzf /tmp/jntugv-admissions-dist.tar.gz -C "$DEPLOY_PATH"
+          rm -f /tmp/jntugv-admissions-dist.tar.gz
 
           if command -v pm2 >/dev/null 2>&1; then
             pm2 delete "$PM2_FRONTEND_APP_NAME" >/dev/null 2>&1 || true
