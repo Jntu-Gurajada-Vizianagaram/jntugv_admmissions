@@ -18,6 +18,8 @@ pnpm-debug.log*
 
 # Runtime admissions data and uploaded files
 server/data/admin-users.json
+server/data/applicant-accounts.json
+server/data/applicant-drafts.json
 server/data/applications.json
 server/data/admissions/*/*/applications.json
 server/data/admissions/*/*/uploads/
