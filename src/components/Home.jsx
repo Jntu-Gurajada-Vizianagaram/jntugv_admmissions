@@ -13,6 +13,7 @@ import {
   Landmark,
   MapPin,
   Plane,
+  Phone,
   ShieldCheck,
   Users,
 } from 'lucide-react';
@@ -33,11 +34,19 @@ const notifications = [
 ];
 
 const administration = [
+  'Chancellor',
   'Vice-Chancellor',
+  'Officer on Special Duty (OSD)',
   'Rector',
   'Registrar',
   'Directorate of Admissions',
   'Digital Monitoring Cell',
+];
+
+const officialContacts = [
+  { title: 'Vice Chancellor Peshi', phone: '08922 222606', email: 'ps2vc@jntugv.edu.in' },
+  { title: 'Registrar Peshi', phone: '08922 294316', email: 'registrarpeshi@jntugv.edu.in' },
+  { title: 'Directorate of Admissions', phone: '', email: 'da@jntugv.edu.in' },
 ];
 
 export default function Home() {
@@ -56,14 +65,14 @@ export default function Home() {
           <div className="hero-badge">Directorate of Admissions</div>
           <h1 className="hero-title">Jawaharlal Nehru Technological University Gurajada Vizianagaram</h1>
           <p className="hero-subtitle">
-            Official admissions portal for university admission notifications, applicant registration, online application submission, counselling updates, and admissions administration.
+            Official admissions portal for JNTU-GV admission notifications, online applications, applicant support, counselling updates, verification, and admission records.
           </p>
 
           <div className="directorate-action-panel">
             <div>
               <span>Latest Admissions</span>
               <h2>RUKF-IIBMP Admissions 2026-27</h2>
-              <p>Five-year International Integrated Bachelor&apos;s and Master&apos;s Programme offered by JNTU-GV with Knowledge Foundation @ Reutlingen University, Germany.</p>
+              <p>JNTU-GV/RUKF admissions for the 5 Years International Integrated Bachelor and Master&apos;s Programmes.</p>
             </div>
             {applicationOpen ? (
               <Link to="/register" className="btn btn-primary">
@@ -87,21 +96,21 @@ export default function Home() {
               <div className="card-icon"><Building2 size={26} /></div>
               <h2>About Directorate</h2>
               <p>
-                The Directorate of Admissions coordinates admission notifications, online application workflows, applicant support, document verification, counselling schedules, and admission records for notified programmes of JNTU-GV.
+                The Directorate of Admissions manages admission-related activities for undergraduate, postgraduate, research, pharmacy, and special international integrated programmes. It coordinates online applications, entrance or selection processes, admission records, candidate updates, and integration with academic departments.
               </p>
             </article>
             <article className="directorate-overview-card">
               <div className="card-icon"><Landmark size={26} /></div>
               <h2>University</h2>
               <p>
-                Jawaharlal Nehru Technological University Gurajada Vizianagaram serves the academic, administrative, and student support needs of technical education through structured university processes and transparent admissions.
+                JNTU College of Engineering, Vizianagaram was established in 2007 as a constituent college of JNTU Hyderabad. Vide University Act No. 22 of 2021, Jawaharlal Nehru Technological University Gurajada, Vizianagaram came into existence as a separate university through G.O.Ms.No.3, dated 12-01-2022.
               </p>
             </article>
             <article className="directorate-overview-card">
               <div className="card-icon"><ShieldCheck size={26} /></div>
               <h2>Administration</h2>
               <p>
-                Admissions activities are supported through university administration, Directorate officers, verification teams, and the Digital Monitoring Cell for reliable digital service delivery.
+                The university jurisdiction covers Vizianagaram, Visakhapatnam, Srikakulam, Parvathipuram Manyam, Alluri Sitharama Raju, and Anakapalli districts, with constituent and affiliated colleges under its academic administration.
               </p>
             </article>
           </div>
@@ -113,7 +122,7 @@ export default function Home() {
           <div className="section-title-row">
             <div>
               <h2 className="section-heading text-left">Administration</h2>
-              <p>Admissions processes are carried out under the university administrative structure with dedicated digital and verification support.</p>
+              <p>Explore the key administrative offices of JNTU-GV and the Directorate units supporting admissions and academic services.</p>
             </div>
           </div>
           <div className="administration-list">
@@ -121,6 +130,29 @@ export default function Home() {
               <article key={item}>
                 <CheckCircle2 size={20} />
                 <span>{item}</span>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="contact-strip-section">
+        <div className="container-inner">
+          <div className="section-title-row">
+            <div>
+              <h2 className="section-heading text-left">Official Contacts</h2>
+              <p>Selected university contact points listed on the official JNTU-GV website.</p>
+            </div>
+          </div>
+          <div className="contact-card-grid">
+            {officialContacts.map((contact) => (
+              <article className="contact-card" key={contact.title}>
+                <div className="card-icon"><Phone size={22} /></div>
+                <div>
+                  <h3>{contact.title}</h3>
+                  {contact.phone && <p>{contact.phone}</p>}
+                  <a href={`mailto:${contact.email}`}>{contact.email}</a>
+                </div>
               </article>
             ))}
           </div>
@@ -176,7 +208,7 @@ export default function Home() {
                   </div>
                 </div>
                 <p>
-                  First batch admissions for B.Tech + M.Sc integrated pathways in collaboration with Knowledge Foundation @ Reutlingen University, Germany.
+                  Online applications are open for 5 Years International Integrated Bachelor and Master&apos;s Programmes. Last date is 14.08.2026, late-fee date is 18.08.2026, and counselling is scheduled on 19.08.2026 at 10:00 AM.
                 </p>
                 <div className="programme-facts" aria-label="Programme overview">
                   <article>
