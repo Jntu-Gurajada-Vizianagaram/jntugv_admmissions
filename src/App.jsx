@@ -17,6 +17,11 @@ export default function App() {
           <main className="main-content-area">
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/administration" element={<Home focusSection="administration" />} />
+              <Route path="/programmes" element={<Home focusSection="programmes" />} />
+              <Route path="/notifications" element={<Home focusSection="notifications" />} />
+              <Route path="/latest-admissions" element={<Home focusSection="latest-admissions" />} />
+              <Route path="/contact" element={<Home focusSection="contact" />} />
               <Route path="/application-RUKF-IIBMP" element={<ApplicationForm />} />
               <Route path="/register" element={<CandidateLogin />} />
               <Route path="/login" element={<CandidateLogin />} />

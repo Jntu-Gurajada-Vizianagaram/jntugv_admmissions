@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from '../lib/router';
 import {
   Bell,
   Building2,
   CalendarDays,
-  CheckCircle2,
   ClipboardList,
   ExternalLink,
   FileText,
@@ -33,14 +32,28 @@ const notifications = [
   },
 ];
 
-const administration = [
-  'Chancellor',
-  'Vice-Chancellor',
-  'Officer on Special Duty (OSD)',
-  'Rector',
-  'Registrar',
-  'Directorate of Admissions',
-  'Digital Monitoring Cell',
+const administrationProfiles = [
+  {
+    name: 'Prof. V. V. Subba Rao',
+    role: "Hon'ble Vice-Chancellor",
+    email: 'vc@jntugv.edu.in',
+    image: '/jntugv-logo.png',
+    summary: 'Professor of Mechanical Engineering with extensive academic and administrative experience in technical education.',
+  },
+  {
+    name: 'Prof. D. Rajya Lakshmi',
+    role: 'Registrar',
+    email: 'rajyalakshmi.cse@jntugvcev.edu.in',
+    image: '/jntugv-logo.png',
+    summary: 'Professor of Computer Science and Engineering with teaching, research, evaluation, and university administration experience.',
+  },
+  {
+    name: 'Dr. Shaik Kalesha Vali',
+    role: 'Director of Admissions',
+    email: 'da@jntugv.edu.in',
+    image: '/jntugv-logo.png',
+    summary: "Director (i/c) of IQAC and Officer on Special Duty to Hon'ble Vice-Chancellor; Professor of Mathematics, Dept. of BS&HSS.",
+  },
 ];
 
 const officialContacts = [
@@ -49,8 +62,19 @@ const officialContacts = [
   { title: 'Directorate of Admissions', phone: '', email: 'da@jntugv.edu.in' },
 ];
 
-export default function Home() {
+export default function Home({ focusSection = null }) {
   const applicationOpen = useApplicationOpen();
+
+  useEffect(() => {
+    if (!focusSection) {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      document.getElementById(focusSection)?.scrollIntoView({ block: 'start' });
+    });
+  }, [focusSection]);
 
   return (
     <div className="home-container">
@@ -117,7 +141,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="administration-section">
+      <section id="administration" className="administration-section">
         <div className="container-inner">
           <div className="section-title-row">
             <div>
@@ -125,18 +149,25 @@ export default function Home() {
               <p>Explore the key administrative offices of JNTU-GV and the Directorate units supporting admissions and academic services.</p>
             </div>
           </div>
-          <div className="administration-list">
-            {administration.map((item) => (
-              <article key={item}>
-                <CheckCircle2 size={20} />
-                <span>{item}</span>
+          <div className="administration-profile-grid">
+            {administrationProfiles.map((profile) => (
+              <article className="administration-profile-card" key={profile.email}>
+                <div className="administration-profile-image">
+                  <img src={profile.image} alt={profile.name} />
+                </div>
+                <div className="administration-profile-content">
+                  <span>{profile.role}</span>
+                  <h3>{profile.name}</h3>
+                  <p>{profile.summary}</p>
+                  <a href={`mailto:${profile.email}`}>{profile.email}</a>
+                </div>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="contact-strip-section">
+      <section id="contact" className="contact-strip-section">
         <div className="container-inner">
           <div className="section-title-row">
             <div>
@@ -159,7 +190,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="notifications-section" aria-labelledby="notifications-heading">
+      <section id="notifications" className="notifications-section" aria-labelledby="notifications-heading">
         <div className="container-inner">
           <div className="section-title-row">
             <div>
@@ -188,7 +219,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="latest-admissions-section">
+      <section id="latest-admissions" className="latest-admissions-section">
         <div className="container-inner">
           <div className="latest-admissions-layout">
             <div className="latest-admissions-main">
@@ -199,7 +230,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="admission-programme-card">
+              <div id="programmes" className="admission-programme-card">
                 <div className="admission-programme-header">
                   <div className="card-icon"><Bell size={24} /></div>
                   <div>

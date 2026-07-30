@@ -21,6 +21,11 @@ export default function ModernHeader() {
         <nav className="header-nav">
           <ul>
             <li><NavLink to="/">Home</NavLink></li>
+            <li><NavLink to="/administration">Administration</NavLink></li>
+            <li><NavLink to="/programmes">Programmes</NavLink></li>
+            <li><NavLink to="/notifications">Notifications</NavLink></li>
+            <li><NavLink to="/latest-admissions">Latest Admissions</NavLink></li>
+            <li><NavLink to="/contact">Contact Us</NavLink></li>
             <li><NavLink to="/admin">Department Login</NavLink></li>
             <li>
               {applicationOpen ? (
