@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useSearchParams } from '../lib/routerHooks';
 import { CheckCircle2, LogIn, Search, UserPlus } from 'lucide-react';
 import { applicantLogin, getApplicationStatus, registerApplicant } from '../lib/api';
 import { useForm } from '../context/useForm';
-import { APPLICATION_OPEN_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
+import { APPLICATION_COMMENCE_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import CandidateStatusCard from './CandidateStatusCard';
 import './CandidateLogin.css';
 
@@ -234,7 +234,7 @@ export default function CandidateLogin() {
           <div className="candidate-login-actions">
             <span className="btn btn-accent application-link-disabled" aria-disabled="true">
               <Search size={18} />
-              Applications open {APPLICATION_OPEN_LABEL}
+              {APPLICATION_COMMENCE_LABEL}
             </span>
           </div>
         )}

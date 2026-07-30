@@ -12,7 +12,7 @@ import {
   Plane,
   Users,
 } from 'lucide-react';
-import { APPLICATION_OPEN_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
+import { APPLICATION_COMMENCE_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import './Home.css';
 
 const studentReferencePdfs = [
@@ -59,7 +59,7 @@ export default function Home() {
             ) : (
               <span className="btn btn-primary application-link-disabled" aria-disabled="true">
                 <ClipboardList size={18} />
-                Apply opens {APPLICATION_OPEN_LABEL}
+                {APPLICATION_COMMENCE_LABEL}
               </span>
             )}
           </div>

@@ -4,7 +4,7 @@ import { Link } from '../lib/router';
 import { CheckCircle2, Download, Printer, Save } from 'lucide-react';
 import { useForm } from '../context/useForm';
 import { downloadApplicationPdf } from '../utils/downloadApplicationPdf';
-import { APPLICATION_OPEN_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
+import { APPLICATION_COMMENCE_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import ProgressBar from './ProgressBar';
 import PrintableApplication from './PrintableApplication';
 import Step1Programme from './steps/Step1Programme';
@@ -61,7 +61,7 @@ export default function ApplicationForm() {
         <section className="application-notice-page">
           <div className="application-status-badge">Applications are not open yet</div>
           <h1>RUKF-IIBMP Admissions 2026-27</h1>
-          <p>Online applications will be enabled automatically on {APPLICATION_OPEN_LABEL}, as scheduled.</p>
+          <p>{APPLICATION_COMMENCE_LABEL}.</p>
           <Link to="/" className="btn btn-primary">Return to Home</Link>
         </section>
       </div>

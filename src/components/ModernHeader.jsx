@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, NavLink } from '../lib/router';
 import { LogIn } from 'lucide-react';
-import { APPLICATION_OPEN_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
+import { APPLICATION_COMMENCE_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import './ModernHeader.css';
 
 export default function ModernHeader() {
@@ -29,9 +29,9 @@ export default function ModernHeader() {
                   Applicant Login
                 </Link>
               ) : (
-                <span className="btn btn-primary nav-cta application-link-disabled" title={`Opens ${APPLICATION_OPEN_LABEL}`}>
+                <span className="btn btn-primary nav-cta application-link-disabled" title={APPLICATION_COMMENCE_LABEL}>
                   <LogIn size={16} />
-                  Opens 30 Jul, 5 PM
+                  Commences 5 PM Today
                 </span>
               )}
             </li>
