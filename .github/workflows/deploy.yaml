@@ -83,12 +83,19 @@ jobs:
             set +a
           fi
 
+          if [ -n "${NODE_INTERPRETER:-}" ] && [ -x "$NODE_INTERPRETER" ]; then
+            export PATH="$(dirname "$NODE_INTERPRETER"):$PATH"
+          fi
+
           git fetch --prune origin main
           git checkout main
           git pull --ff-only origin main
 
-          npm ci
+          node -v
+          npm -v
+          npm ci --include=dev
           npm run build
+          npm prune --omit=dev
 
           if command -v pm2 >/dev/null 2>&1; then
             pm2 delete "$PM2_FRONTEND_APP_NAME" >/dev/null 2>&1 || true
