@@ -136,7 +136,7 @@ export default function ApplicationForm() {
         </p>
         <div className="application-notice-panel">
           <strong>Admissions Notice</strong>
-          <span>Keep scanned certificates, entrance rank cards, Aadhaar, category certificate if applicable, photo, signature, and SBI Collect payment receipt PDF ready before starting the application.</span>
+          <span>Keep scanned certificates, entrance rank cards, Aadhaar, category certificate if applicable, photo, and signature ready before starting the application. Payment procedure will be notified separately by the Directorate of Admissions.</span>
         </div>
       </section>
       <motion.div 

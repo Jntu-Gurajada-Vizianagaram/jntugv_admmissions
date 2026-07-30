@@ -107,6 +107,66 @@
   margin: 0.25rem 0;
 }
 
+.payment-hold-card {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid #facc15;
+  border-radius: var(--radius-md);
+  background: #fffbeb;
+}
+
+.payment-hold-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.payment-hold-card h4 {
+  margin: 0;
+  color: #92400e;
+}
+
+.payment-hold-card p {
+  margin: 0.35rem 0 0;
+  color: #713f12;
+  line-height: 1.55;
+}
+
+.payment-instruction-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.payment-instruction-grid article {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+  color: var(--primary-blue);
+}
+
+.payment-instruction-grid article div {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.payment-instruction-grid article span {
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
 .payment-entry-list {
   display: grid;
   gap: 1rem;
@@ -270,6 +330,10 @@
   .summary-row,
   .payment-actions-row {
     flex-direction: row;
+  }
+
+  .payment-instruction-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

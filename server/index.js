@@ -57,7 +57,7 @@ const IIBMP_2026_SCHEMA = {
     aadhaar: 'Required for all candidates',
     caste: 'Required when category is not OC',
     educationCertificates: 'Required on each education row',
-    paymentProof: 'Required on every payment row entered',
+    paymentProof: 'Required when payment process is declared',
   },
 };
 
