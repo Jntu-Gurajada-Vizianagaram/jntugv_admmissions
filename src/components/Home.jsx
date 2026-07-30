@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from '../lib/router';
 import {
   Bell,
@@ -62,22 +62,17 @@ const officialContacts = [
   { title: 'Directorate of Admissions', phone: '', email: 'da@jntugv.edu.in' },
 ];
 
-export default function Home({ focusSection = null }) {
+export default function Home({ page = 'home' }) {
   const applicationOpen = useApplicationOpen();
-
-  useEffect(() => {
-    if (!focusSection) {
-      window.scrollTo({ top: 0, behavior: 'auto' });
-      return;
-    }
-
-    window.requestAnimationFrame(() => {
-      document.getElementById(focusSection)?.scrollIntoView({ block: 'start' });
-    });
-  }, [focusSection]);
+  const showAll = page === 'home';
+  const showAdministration = showAll || page === 'administration';
+  const showContact = showAll || page === 'contact';
+  const showNotifications = showAll || page === 'notifications';
+  const showLatestAdmissions = showAll || page === 'latest-admissions' || page === 'programmes';
 
   return (
     <div className="home-container">
+      {showAll && (
       <section className="directorate-hero">
         <div className="hero-content">
           <div className="brand-row" aria-label="University logos">
@@ -112,7 +107,9 @@ export default function Home({ focusSection = null }) {
           </div>
         </div>
       </section>
+      )}
 
+      {showAll && (
       <section className="directorate-section">
         <div className="container-inner">
           <div className="directorate-overview-grid">
@@ -140,8 +137,10 @@ export default function Home({ focusSection = null }) {
           </div>
         </div>
       </section>
+      )}
 
-      <section id="administration" className="administration-section">
+      {showAdministration && (
+      <section className="administration-section">
         <div className="container-inner">
           <div className="section-title-row">
             <div>
@@ -166,8 +165,10 @@ export default function Home({ focusSection = null }) {
           </div>
         </div>
       </section>
+      )}
 
-      <section id="contact" className="contact-strip-section">
+      {showContact && (
+      <section className="contact-strip-section">
         <div className="container-inner">
           <div className="section-title-row">
             <div>
@@ -189,8 +190,10 @@ export default function Home({ focusSection = null }) {
           </div>
         </div>
       </section>
+      )}
 
-      <section id="notifications" className="notifications-section" aria-labelledby="notifications-heading">
+      {showNotifications && (
+      <section className="notifications-section" aria-labelledby="notifications-heading">
         <div className="container-inner">
           <div className="section-title-row">
             <div>
@@ -218,8 +221,10 @@ export default function Home({ focusSection = null }) {
           </div>
         </div>
       </section>
+      )}
 
-      <section id="latest-admissions" className="latest-admissions-section">
+      {showLatestAdmissions && (
+      <section className="latest-admissions-section">
         <div className="container-inner">
           <div className="latest-admissions-layout">
             <div className="latest-admissions-main">
@@ -230,7 +235,7 @@ export default function Home({ focusSection = null }) {
                 </div>
               </div>
 
-              <div id="programmes" className="admission-programme-card">
+              <div className="admission-programme-card">
                 <div className="admission-programme-header">
                   <div className="card-icon"><Bell size={24} /></div>
                   <div>
@@ -303,6 +308,7 @@ export default function Home({ focusSection = null }) {
           </div>
         </div>
       </section>
+      )}
     </div>
   );
 }

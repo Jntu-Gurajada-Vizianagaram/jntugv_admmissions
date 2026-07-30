@@ -16,12 +16,12 @@ export default function App() {
           <ModernHeader />
           <main className="main-content-area">
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/administration" element={<Home focusSection="administration" />} />
-              <Route path="/programmes" element={<Home focusSection="programmes" />} />
-              <Route path="/notifications" element={<Home focusSection="notifications" />} />
-              <Route path="/latest-admissions" element={<Home focusSection="latest-admissions" />} />
-              <Route path="/contact" element={<Home focusSection="contact" />} />
+              <Route path="/" element={<Home page="home" />} />
+              <Route path="/administration" element={<Home page="administration" />} />
+              <Route path="/programmes" element={<Home page="programmes" />} />
+              <Route path="/notifications" element={<Home page="notifications" />} />
+              <Route path="/latest-admissions" element={<Home page="latest-admissions" />} />
+              <Route path="/contact" element={<Home page="contact" />} />
               <Route path="/application-RUKF-IIBMP" element={<ApplicationForm />} />
               <Route path="/register" element={<CandidateLogin />} />
               <Route path="/login" element={<CandidateLogin />} />
