@@ -26,6 +26,18 @@ export default function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
+          <footer className="site-footer">
+            <div className="site-footer-inner">
+              <p>Copyright © Directorate of Admissions, JNTUGV.</p>
+              <p>Website designed, developed and maintained by Programmer, Digital Monitoring Cell.</p>
+              <p>
+                Support contact for website down or website errors:{' '}
+                <a href="mailto:support@jntugv.edu.in">support@jntugv.edu.in</a>
+                <span aria-hidden="true"> | </span>
+                <a href="mailto:dmc@jntugv.edu.in">dmc@jntugv.edu.in</a>
+              </p>
+            </div>
+          </footer>
         </div>
       </FormProvider>
     </Router>
