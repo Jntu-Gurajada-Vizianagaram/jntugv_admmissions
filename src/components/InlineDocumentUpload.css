@@ -11,7 +11,7 @@
 }
 
 .inline-upload-control {
-  min-height: 54px;
+  height: 54px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -30,7 +30,7 @@
 
 .inline-upload-button {
   min-width: 0;
-  min-height: 40px;
+  height: 42px;
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
   align-items: center;
@@ -44,6 +44,12 @@
   font: inherit;
   font-weight: 800;
   text-align: left;
+  overflow: hidden;
+}
+
+.inline-upload-button svg {
+  display: block;
+  justify-self: center;
 }
 
 .inline-upload-button span {
@@ -58,8 +64,8 @@
 }
 
 .inline-upload-remove {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   align-self: center;
@@ -70,6 +76,7 @@
   background: #fee2e2;
   color: #dc2626;
   cursor: pointer;
+  line-height: 0;
 }
 
 .inline-upload-remove svg {
