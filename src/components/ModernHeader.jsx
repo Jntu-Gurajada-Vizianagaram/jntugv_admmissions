@@ -37,6 +37,7 @@ export default function ModernHeader() {
             <li><NavLink to="/administration" onClick={closeMenu}>Administration</NavLink></li>
             <li><NavLink to="/programmes" onClick={closeMenu}>Programmes</NavLink></li>
             <li><NavLink to="/notifications" onClick={closeMenu}>Notifications</NavLink></li>
+            <li><NavLink to="/fee-details" onClick={closeMenu}>Fee Details</NavLink></li>
             <li><NavLink to="/latest-admissions" onClick={closeMenu}>Latest Admissions</NavLink></li>
             <li><NavLink to="/contact" onClick={closeMenu}>Contact Us</NavLink></li>
             <li><NavLink to="/admin" onClick={closeMenu}>Department Login</NavLink></li>

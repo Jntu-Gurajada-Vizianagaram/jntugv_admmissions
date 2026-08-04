@@ -68,6 +68,7 @@ export default function Home({ page = 'home' }) {
   const showAdministration = showAll || page === 'administration';
   const showContact = showAll || page === 'contact';
   const showNotifications = showAll || page === 'notifications';
+  const showFeeDetails = page === 'fee-details';
   const showLatestAdmissions = showAll || page === 'latest-admissions' || page === 'programmes';
 
   return (
@@ -187,6 +188,50 @@ export default function Home({ page = 'home' }) {
                 </div>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+      )}
+
+      {showFeeDetails && (
+      <section className="fee-details-section">
+        <div className="container-inner">
+          <div className="fee-page-heading">
+            <span className="fee-page-icon"><IndianRupee size={30} /></span>
+            <div>
+              <p className="page-kicker">RUKF-IIBMP Admissions 2026-27</p>
+              <h1>Fee Details and Counselling Instructions</h1>
+              <p>Fees are not collected while submitting the online application. Candidates must bring the required fees when attending offline admission counselling in person.</p>
+            </div>
+          </div>
+
+          <div className="fee-card-grid">
+            <article className="fee-detail-card">
+              <span>Counselling Fee</span>
+              <strong>₹2,000</strong>
+              <p>Required at the time of offline admission counselling.</p>
+            </article>
+            <article className="fee-detail-card featured">
+              <span>First-Year Tuition Fee</span>
+              <strong>₹1,50,000</strong>
+              <p>Required at the time of offline admission counselling to complete the admission process.</p>
+            </article>
+          </div>
+
+          <div className="fee-instruction-panel">
+            <h2>Important Instructions</h2>
+            <ul>
+              <li>Attend counselling in person at the Office of the Director, Directorate of Admissions, JNTU-GV, Dwarapudi, Vizianagaram.</li>
+              <li>Bring all original certificates along with the counselling fee and first-year tuition fee.</li>
+              <li>Pay only through the mode instructed by the Directorate of Admissions at the counselling venue, including cash or the prescribed SBI challan, as applicable.</li>
+              <li>Strictly follow all Directorate rules, verification requirements, timelines and payment instructions to secure admission.</li>
+              <li>Attending counselling does not by itself guarantee admission; admission is subject to eligibility, certificate verification, seat availability and payment of the prescribed fees.</li>
+            </ul>
+          </div>
+
+          <div className="fee-warning-callout">
+            <ShieldCheck size={24} />
+            <p><strong>Payment safety:</strong> Do not make payments to unofficial accounts, links or individuals. Follow only instructions issued by the Directorate of Admissions.</p>
           </div>
         </div>
       </section>

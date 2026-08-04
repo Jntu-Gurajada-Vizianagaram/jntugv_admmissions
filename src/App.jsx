@@ -33,6 +33,7 @@ export default function App() {
               <Route path="/administration" element={<Home page="administration" />} />
               <Route path="/programmes" element={<Home page="programmes" />} />
               <Route path="/notifications" element={<Home page="notifications" />} />
+              <Route path="/fee-details" element={<Home page="fee-details" />} />
               <Route path="/latest-admissions" element={<Home page="latest-admissions" />} />
               <Route path="/contact" element={<Home page="contact" />} />
               <Route path="/application-RUKF-IIBMP" element={<ApplicationForm />} />

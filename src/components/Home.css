@@ -120,6 +120,125 @@
   padding: clamp(2rem, 5vw, 4rem) 0;
 }
 
+.fee-details-section {
+  padding: clamp(2rem, 5vw, 4.5rem) 1rem;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+}
+
+.fee-page-heading {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  max-width: 850px;
+  margin-bottom: 2rem;
+}
+
+.fee-page-heading h1 {
+  margin: 0.25rem 0 0.65rem;
+  color: var(--primary-blue);
+  font-size: clamp(1.75rem, 4vw, 2.65rem);
+}
+
+.fee-page-heading p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.fee-page-icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--primary-blue);
+  color: white;
+}
+
+.fee-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.fee-detail-card {
+  display: grid;
+  gap: 0.55rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.fee-detail-card.featured {
+  border-color: #86efac;
+  background: linear-gradient(135deg, #fff 0%, #f0fdf4 100%);
+}
+
+.fee-detail-card span {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+.fee-detail-card strong {
+  color: var(--primary-blue);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+}
+
+.fee-detail-card p,
+.fee-warning-callout p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.fee-instruction-panel {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+}
+
+.fee-instruction-panel h2 {
+  margin: 0 0 1rem;
+  color: var(--primary-blue);
+}
+
+.fee-instruction-panel ul {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.fee-warning-callout {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #fbbf24;
+  border-radius: var(--radius-md);
+  background: #fffbeb;
+  color: #92400e;
+}
+
+@media (max-width: 680px) {
+  .fee-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fee-page-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 .directorate-section,
 .notifications-section,
 .contact-strip-section {

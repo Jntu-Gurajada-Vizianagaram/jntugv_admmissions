@@ -91,14 +91,44 @@ jobs:
 
       - name: Upload frontend build
         run: |
-          scp \
-            -i ~/.ssh/deploy_key \
-            -P "$DEPLOY_PORT" \
-            -o BatchMode=yes \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=yes \
-            dist.tar.gz \
-            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/jntugv-admissions-dist.tar.gz"
+          set -euo pipefail
+          SSH_OPTIONS=(
+            -i ~/.ssh/deploy_key
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o ConnectTimeout=30
+            -o ConnectionAttempts=3
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=3
+          )
+
+          connected=false
+          for attempt in 1 2 3; do
+            echo "SSH connectivity check $attempt of 3..."
+            if ssh "${SSH_OPTIONS[@]}" -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" true; then
+              connected=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$connected" != true ]; then
+            echo "Unable to reach the deployment server over SSH."
+            echo "Verify DEPLOY_HOST and DEPLOY_PORT, and allow GitHub Actions runner traffic in the server firewall/hosting SSH access rules."
+            exit 1
+          fi
+
+          for attempt in 1 2 3; do
+            if scp "${SSH_OPTIONS[@]}" -P "$DEPLOY_PORT" dist.tar.gz \
+              "$DEPLOY_USER@$DEPLOY_HOST:/tmp/jntugv-admissions-dist.tar.gz"; then
+              exit 0
+            fi
+            echo "Upload attempt $attempt failed. Retrying..."
+            sleep $((attempt * 10))
+          done
+          echo "SCP upload failed after three attempts."
+          exit 1
 
       - name: Pull, install and restart on server
         run: |
