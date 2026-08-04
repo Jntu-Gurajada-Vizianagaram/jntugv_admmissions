@@ -163,28 +163,31 @@ jobs:
             exit 1
           fi
 
-          repair_git_permissions=false
-          for git_dir in .git/objects .git/objects/pack .git/refs; do
-            permission_probe="$git_dir/.deploy-write-test"
-            if ! touch "$permission_probe" 2>/dev/null; then
-              repair_git_permissions=true
-              break
-            fi
-            rm -f "$permission_probe"
-          done
-
-          if [ "$repair_git_permissions" = true ]; then
-            deployment_account="$(id -un)"
-            deployment_group="$(id -gn)"
-            echo "Repairing ownership of the repository metadata for deployment user $deployment_account..."
-            if sudo -n chown -R "$(id -u):$(id -g)" "$DEPLOY_PATH/.git"; then
-              chmod -R u+rwX "$DEPLOY_PATH/.git"
-            else
-              echo "The deployment user cannot write to $DEPLOY_PATH/.git and passwordless sudo is unavailable."
-              echo "Run once on the server: sudo chown -R $deployment_account:$deployment_group '$DEPLOY_PATH/.git'"
-              exit 1
-            fi
+          deployment_account="$(id -un)"
+          repository_owner="$deployment_account"
+          if id jntugv-admissions >/dev/null 2>&1; then
+            repository_owner="jntugv-admissions"
           fi
+          repository_group="$(id -gn "$repository_owner")"
+          echo "Normalizing Git metadata ownership for $repository_owner:$repository_group..."
+          if [ "$(id -u)" -eq 0 ]; then
+            chown -R "$repository_owner:$repository_group" "$DEPLOY_PATH/.git"
+          elif ! sudo -n chown -R "$repository_owner:$repository_group" "$DEPLOY_PATH/.git"; then
+            echo "Passwordless sudo is required to repair Git objects previously created by root."
+            echo "Run once on the server: sudo chown -R $repository_owner:$repository_group '$DEPLOY_PATH/.git'"
+            exit 1
+          fi
+
+          find "$DEPLOY_PATH/.git" -type d -exec chmod 2775 {} +
+          find "$DEPLOY_PATH/.git" -type f -exec chmod 0664 {} +
+          git config core.sharedRepository group
+
+          permission_probe="$DEPLOY_PATH/.git/objects/.deploy-write-test"
+          if ! touch "$permission_probe"; then
+            echo "Git object database is still not writable after ownership repair."
+            exit 1
+          fi
+          rm -f "$permission_probe"
 
           git fetch --prune origin main
           git checkout main
