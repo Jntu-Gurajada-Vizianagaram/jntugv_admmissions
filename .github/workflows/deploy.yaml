@@ -49,7 +49,9 @@ jobs:
           npm run build
 
       - name: Package frontend build
-        run: tar -czf dist.tar.gz dist
+        run: |
+          tar -czf dist.tar.gz dist
+          git archive --format=tar.gz --output=source.tar.gz HEAD
 
       - name: Configure SSH
         env:
@@ -120,8 +122,8 @@ jobs:
           fi
 
           for attempt in 1 2 3; do
-            if scp "${SSH_OPTIONS[@]}" -P "$DEPLOY_PORT" dist.tar.gz \
-              "$DEPLOY_USER@$DEPLOY_HOST:/tmp/jntugv-admissions-dist.tar.gz"; then
+            if scp "${SSH_OPTIONS[@]}" -P "$DEPLOY_PORT" dist.tar.gz source.tar.gz \
+              "$DEPLOY_USER@$DEPLOY_HOST:/tmp/"; then
               exit 0
             fi
             echo "Upload attempt $attempt failed. Retrying..."
@@ -163,45 +165,16 @@ jobs:
             exit 1
           fi
 
-          deployment_account="$(id -un)"
-          repository_owner="$deployment_account"
-          if id jntugv-admissions >/dev/null 2>&1; then
-            repository_owner="jntugv-admissions"
-          fi
-          repository_group="$(id -gn "$repository_owner")"
-          echo "Normalizing Git metadata ownership for $repository_owner:$repository_group..."
-          if [ "$(id -u)" -eq 0 ]; then
-            chown -R "$repository_owner:$repository_group" "$DEPLOY_PATH/.git"
-          elif ! sudo -n chown -R "$repository_owner:$repository_group" "$DEPLOY_PATH/.git"; then
-            echo "Passwordless sudo is required to repair Git objects previously created by root."
-            echo "Run once on the server: sudo chown -R $repository_owner:$repository_group '$DEPLOY_PATH/.git'"
-            exit 1
-          fi
-
-          find "$DEPLOY_PATH/.git" -type d -exec chmod 2775 {} +
-          find "$DEPLOY_PATH/.git" -type f -exec chmod 0664 {} +
-          git config core.sharedRepository group
-
-          permission_probe="$DEPLOY_PATH/.git/objects/.deploy-write-test"
-          if ! touch "$permission_probe"; then
-            echo "Git object database is still not writable after ownership repair."
-            exit 1
-          fi
-          rm -f "$permission_probe"
-
-          git fetch --prune origin main
-          git checkout main
-          # Older releases rewrote this tracked schema while running. Restore only
-          # this code-managed file so submitted application data remains untouched.
-          git restore --worktree -- server/data/admissions/2026/IIBMP/schema.json
-          git pull --ff-only origin main
+          echo "Installing committed source archive without modifying server Git metadata..."
+          tar -xzf /tmp/source.tar.gz -C "$DEPLOY_PATH"
+          rm -f /tmp/source.tar.gz
 
           node -v
           npm -v
           npm ci --omit=dev
           rm -rf dist
-          tar -xzf /tmp/jntugv-admissions-dist.tar.gz -C "$DEPLOY_PATH"
-          rm -f /tmp/jntugv-admissions-dist.tar.gz
+          tar -xzf /tmp/dist.tar.gz -C "$DEPLOY_PATH"
+          rm -f /tmp/dist.tar.gz
 
           if command -v pm2 >/dev/null 2>&1; then
             pm2 delete "$PM2_FRONTEND_APP_NAME" >/dev/null 2>&1 || true
