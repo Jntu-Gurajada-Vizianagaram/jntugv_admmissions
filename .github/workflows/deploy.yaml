@@ -135,6 +135,9 @@ jobs:
 
           git fetch --prune origin main
           git checkout main
+          # Older releases rewrote this tracked schema while running. Restore only
+          # this code-managed file so submitted application data remains untouched.
+          git restore --worktree -- server/data/admissions/2026/IIBMP/schema.json
           git pull --ff-only origin main
 
           node -v

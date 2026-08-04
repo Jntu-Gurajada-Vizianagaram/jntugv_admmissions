@@ -327,7 +327,11 @@ const ensureProcessStore = async (year = DEFAULT_YEAR, processCode = DEFAULT_PRO
   await mkdir(path.join(processDir(year, processCode), 'uploads'), { recursive: true });
 
   if (year === DEFAULT_YEAR && processCode === DEFAULT_PROCESS) {
-    await writeFile(schemaFile(year, processCode), JSON.stringify(IIBMP_2026_SCHEMA, null, 2));
+    try {
+      await access(schemaFile(year, processCode));
+    } catch {
+      await writeFile(schemaFile(year, processCode), JSON.stringify(IIBMP_2026_SCHEMA, null, 2));
+    }
   }
 };
 

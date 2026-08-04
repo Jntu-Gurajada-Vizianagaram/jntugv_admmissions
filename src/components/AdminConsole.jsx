@@ -18,6 +18,7 @@ import {
 } from '../lib/api';
 import PrintableApplication from './PrintableApplication';
 import PasswordField from './PasswordField';
+import { printApplication } from '../utils/printApplication';
 import './AdminConsole.css';
 
 const STATUSES = ['Submitted', 'Under Review / Verification in Progress', 'Verified', 'Needs Correction', 'Rejected'];
@@ -618,7 +619,7 @@ export default function AdminConsole() {
                   <h3>{selected.registrationNo}</h3>
                   <p>{selectedApplication.personal.name} | {selectedApplication.personal.mobile}</p>
                 </div>
-                <button type="button" className="btn btn-outline" onClick={() => window.print()}>
+                <button type="button" className="btn btn-outline" onClick={printApplication}>
                   <Printer size={17} />
                   Print Application
                 </button>

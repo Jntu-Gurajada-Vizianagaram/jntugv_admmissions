@@ -3,6 +3,7 @@ import { Download, Printer } from 'lucide-react';
 import { useForm } from '../../context/useForm';
 import { collectMessages, textFormat } from '../../utils/validation';
 import { downloadApplicationPdf } from '../../utils/downloadApplicationPdf';
+import { printApplication } from '../../utils/printApplication';
 import PrintableApplication from '../PrintableApplication';
 import './Step6Review.css';
 
@@ -94,7 +95,7 @@ export default function Step6Review({ onSubmit, onBack }) {
           </div>
         </div>
         <div className="review-print-actions">
-          <button type="button" className="btn btn-outline" onClick={() => window.print()}>
+          <button type="button" className="btn btn-outline" onClick={printApplication}>
             <Printer size={18} />
             Print Application
           </button>

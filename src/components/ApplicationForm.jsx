@@ -4,6 +4,7 @@ import { Link } from '../lib/router';
 import { CheckCircle2, Download, Monitor, Printer, Save } from 'lucide-react';
 import { useForm } from '../context/useForm';
 import { downloadApplicationPdf } from '../utils/downloadApplicationPdf';
+import { printApplication } from '../utils/printApplication';
 import { APPLICATION_COMMENCE_LABEL, useApplicationOpen } from '../utils/applicationSchedule';
 import ProgressBar from './ProgressBar';
 import PrintableApplication from './PrintableApplication';
@@ -101,7 +102,7 @@ export default function ApplicationForm() {
             <p>Please print the submitted application or save it as a PDF for future reference and admission counselling.</p>
           </div>
           <div className="success-actions">
-            <button type="button" className="btn btn-accent" onClick={() => window.print()}>
+            <button type="button" className="btn btn-accent" onClick={printApplication}>
               <Printer size={18} />
               Print Application
             </button>
