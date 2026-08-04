@@ -152,7 +152,7 @@ export default function Step4Documents({ onNext, onBack }) {
 
       <div className="step-nav">
         <button type="button" className="btn btn-outline" onClick={onBack}>Back</button>
-        <button type="button" className="btn btn-primary" onClick={handleNext}>Next: Fee Payment</button>
+        <button type="button" className="btn btn-primary" onClick={handleNext}>Next: Final Review</button>
       </div>
     </div>
   )

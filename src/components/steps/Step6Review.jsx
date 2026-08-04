@@ -72,7 +72,7 @@ export default function Step6Review({ onSubmit, onBack }) {
   return (
     <div className="form-step-anim">
       <div className="step-header no-print">
-        <h3 className="step-title">Step 6: Final Application Preview</h3>
+        <h3 className="step-title">Step 5: Final Application Preview</h3>
         <p className="step-desc">Review the completed application in the same section format as the DOCX before printing or submitting.</p>
       </div>
 

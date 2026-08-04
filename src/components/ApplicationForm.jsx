@@ -11,7 +11,6 @@ import Step1Programme from './steps/Step1Programme';
 import Step2Personal from './steps/Step2Personal';
 import Step3Academics from './steps/Step3Academics';
 import Step4Documents from './steps/Step4Documents';
-import Step5Payment from './steps/Step5Payment';
 import Step6Review from './steps/Step6Review';
 import './ApplicationForm.css';
 
@@ -40,8 +39,7 @@ export default function ApplicationForm() {
       case 2: return <Step2Personal onNext={nextStep} onBack={prevStep} />;
       case 3: return <Step3Academics onNext={nextStep} onBack={prevStep} />;
       case 4: return <Step4Documents onNext={nextStep} onBack={prevStep} />;
-      case 5: return <Step5Payment onNext={nextStep} onBack={prevStep} />;
-      case 6: return <Step6Review onSubmit={submitForm} onBack={prevStep} />;
+      case 5: return <Step6Review onSubmit={submitForm} onBack={prevStep} />;
       default: return <Step1Programme onNext={nextStep} />;
     }
   };
@@ -150,7 +148,7 @@ export default function ApplicationForm() {
         </p>
         <div className="application-notice-panel">
           <strong>Admissions Notice</strong>
-          <span>Keep scanned certificates, entrance rank cards, Aadhaar, category certificate if applicable, photo, and signature ready before starting the application. Payment procedure will be notified separately by the Directorate of Admissions.</span>
+          <span>Keep scanned certificates, entrance rank cards, Aadhaar, category certificate if applicable, photo, and signature ready before starting the application. No payment is required to submit the application.</span>
         </div>
       </section>
       <motion.div 
@@ -176,7 +174,7 @@ export default function ApplicationForm() {
           </button>
         </div>
         
-        <ProgressBar currentStep={currentStep} totalSteps={6} />
+        <ProgressBar currentStep={currentStep} totalSteps={5} />
         {submissionError && <div className="form-alert">{submissionError}</div>}
         
         <div className="form-content-area">

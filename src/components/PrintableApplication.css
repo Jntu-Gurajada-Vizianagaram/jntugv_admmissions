@@ -158,6 +158,10 @@
   padding: 4px 5px;
 }
 
+.payment-information-table tbody td {
+  height: 34px;
+}
+
 .upload-status {
   display: inline-flex;
   align-items: center;
@@ -435,12 +439,12 @@
     background: white !important;
   }
 
-  body * {
+  body:not(.print-daily-report) * {
     visibility: hidden;
   }
 
-  .printable-application,
-  .printable-application * {
+  body:not(.print-daily-report) .printable-application,
+  body:not(.print-daily-report) .printable-application * {
     visibility: visible;
   }
 

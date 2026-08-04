@@ -10,6 +10,7 @@ const EXAM_LABELS = {
 };
 const IN_PROGRESS_STATUS = 'Under Review / Verification in Progress';
 const FINAL_STATUSES = ['Verified', 'Needs Correction', 'Rejected'];
+const PAYMENT_ROW_TITLES = ['Counselling Fee', 'First-Year Tuition Fee'];
 
 const value = (text) => text || '';
 const rowHasValue = (row, keys) => keys.some(key => String(row[key] || '').trim() || row[key]);
@@ -69,18 +70,11 @@ export default function PrintableApplication({ data, regNo = '', verification = 
   const [documentViewer, setDocumentViewer] = useState(null);
   const [documentBlobUrl, setDocumentBlobUrl] = useState('');
   const [documentError, setDocumentError] = useState('');
-  const { programme, personal, education, documents, payments, declaration } = data;
+  const { programme, personal, education, documents, declaration } = data;
   const visibleEducation = education.filter(row => (
     rowHasValue(row, ['examination', 'year', 'classDivision', 'marksGrade', 'institution', 'stateStudied', 'subjects'])
     || row.certificateFile
   ));
-  const visiblePayments = payments
-    .map((payment, index) => ({ ...payment, paymentIndex: index }))
-    .filter(payment => (
-      payment.paymentIndex === 0
-      || rowHasValue(payment, ['txn_ref', 'txn_date', 'mode', 'status'])
-      || payment.proofFile
-    ));
   const additionalDocuments = [
     programme.eligibility.includes('ap') && { title: 'AP-EAPCET-2026 Rank Card', file: documents.doc_ap_rank },
     programme.eligibility.includes('tg') && { title: 'TG-EAPCET-2026 Rank Card', file: documents.doc_tg_rank },
@@ -92,6 +86,10 @@ export default function PrintableApplication({ data, regNo = '', verification = 
       file: documents.doc_others,
     },
   ].filter(Boolean);
+  const printablePayments = PAYMENT_ROW_TITLES.map((title, index) => ({
+    title,
+    ...(Array.isArray(data.payments) ? data.payments[index] : {}),
+  }));
   const selectedVerificationStage = normalizeVerificationStatus(verification?.status);
   const verificationFlowStages = [
     'Submitted',
@@ -314,25 +312,24 @@ export default function PrintableApplication({ data, regNo = '', verification = 
         </tbody>
         </table>
 
-        <h4 className="print-section-title">Registration Fee Payment details</h4>
-        <table className="print-data-table compact-print-table">
-        <thead>
-          <tr><th>S.No</th><th>Fee Type</th><th>Amount</th><th>SBI Collect Reference No</th><th>Transaction date</th><th>Mode of payment</th><th>Status of payment</th><th>SBI Collect Receipt PDF</th></tr>
-        </thead>
-        <tbody>
-          {visiblePayments.map((payment, index) => (
-            <tr key={index}>
-              <td>{index + 1}</td>
-              <td>{payment.paymentIndex === 0 ? 'Counselling Fee' : 'First-Year Tuition Fee'}</td>
-              <td>{payment.paymentIndex === 0 ? '₹2,000' : '₹1,50,000'}</td>
-              <td>{value(payment.txn_ref)}</td>
-              <td>{value(payment.txn_date)}</td>
-              <td>{value(payment.mode)}</td>
-              <td>{payment.status || 'Pending Verification'}</td>
-              <td><UploadStatus file={payment.proofFile} label={`payment receipt ${index + 1}`} onView={openDocumentViewer} /></td>
-            </tr>
-          ))}
-        </tbody>
+        <h4 className="print-section-title">Payment Information</h4>
+        <table className="print-data-table compact-print-table payment-information-table">
+          <thead>
+            <tr><th>S.No</th><th>Fee Type</th><th>Amount</th><th>Receipt / Reference No.</th><th>Payment Date</th><th>Mode</th><th>Verification Status</th></tr>
+          </thead>
+          <tbody>
+            {printablePayments.map((payment, index) => (
+              <tr key={payment.title}>
+                <td>{index + 1}</td>
+                <td>{payment.title}</td>
+                <td>{value(payment.amount || payment.fee)}</td>
+                <td>{value(payment.txn_ref || payment.referenceNo)}</td>
+                <td>{value(payment.txn_date || payment.transactionDate)}</td>
+                <td>{value(payment.mode)}</td>
+                <td>{value(payment.status)}</td>
+              </tr>
+            ))}
+          </tbody>
         </table>
 
         <div className="print-declaration">

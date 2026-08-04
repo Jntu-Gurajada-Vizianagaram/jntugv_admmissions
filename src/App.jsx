@@ -41,6 +41,10 @@ export default function App() {
               <Route path="/status" element={<CandidateLogin />} />
               <Route path="/candidate-login" element={<Navigate to="/register" replace />} />
               <Route path="/admin" element={<AdminConsole />} />
+              <Route path="/admin/dashboard" element={<AdminConsole />} />
+              <Route path="/admin/applications" element={<AdminConsole />} />
+              <Route path="/admin/reports" element={<AdminConsole />} />
+              <Route path="/admin/users" element={<AdminConsole />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

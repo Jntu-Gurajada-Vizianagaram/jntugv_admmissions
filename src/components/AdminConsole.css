@@ -124,6 +124,103 @@
   box-shadow: var(--shadow-sm);
 }
 
+.daily-report-section {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.daily-report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+}
+
+.daily-report-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  color: var(--primary-blue);
+}
+
+.daily-report-header p {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+}
+
+.daily-report-actions {
+  display: flex;
+  align-items: end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.daily-report-actions label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.daily-report-actions input {
+  min-height: 42px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+
+.daily-report-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.daily-report-summary span {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-main);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.daily-report-summary strong {
+  color: var(--primary-blue);
+  font-size: 1.4rem;
+}
+
+.daily-report-table-wrap {
+  overflow-x: auto;
+}
+
+.daily-report-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.daily-report-table th,
+.daily-report-table td {
+  padding: 0.65rem;
+  border: 1px solid var(--border-color);
+  text-align: left;
+  vertical-align: top;
+}
+
+.daily-report-table th {
+  background: #eff6ff;
+  color: var(--primary-blue);
+}
+
 .officer-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -306,7 +403,8 @@
 }
 
 .admin-documents,
-.admin-stage-reviews {
+.admin-stage-reviews,
+.admin-payment-entry {
   margin-bottom: 1rem;
   padding: 1rem;
   border: 1px solid var(--border-color);
@@ -314,7 +412,8 @@
 }
 
 .admin-documents h3,
-.admin-stage-reviews h3 {
+.admin-stage-reviews h3,
+.admin-payment-entry h3 {
   margin: 0 0 1rem;
   color: var(--primary-blue);
 }
@@ -401,8 +500,188 @@
   }
 }
 
+.admin-subnav {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 20;
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  padding: 0.45rem;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+}
+
+.admin-subnav a {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 42px;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.admin-subnav a:hover {
+  background: var(--bg-main);
+  color: var(--primary-blue);
+}
+
+.admin-subnav a.active {
+  background: var(--primary-blue);
+  color: white;
+}
+
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.admin-action-card {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  min-height: 132px;
+  padding: 1.2rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--primary-blue);
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.admin-action-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary-blue);
+  box-shadow: var(--shadow-md);
+}
+
+.admin-action-card span {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.admin-action-card strong {
+  font-size: 1.05rem;
+}
+
+.admin-action-card small {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.admin-access-denied {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  background: #fff7f7;
+}
+
+.admin-access-denied h3,
+.admin-access-denied p {
+  margin: 0;
+}
+
+.admin-payment-entry {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-payment-entry p {
+  margin: 0.3rem 0 0;
+  color: var(--text-muted);
+}
+
+.admin-payment-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-payment-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+
+.admin-payment-table th,
+.admin-payment-table td {
+  padding: 0.55rem;
+  border: 1px solid var(--border-color);
+  vertical-align: middle;
+  text-align: left;
+}
+
+.admin-payment-table th {
+  background: #eff6ff;
+  color: var(--primary-blue);
+}
+
+.admin-payment-table input,
+.admin-payment-table select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+
+.admin-payment-save-note {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.admin-payment-save-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+@media (max-width: 760px) {
+  .daily-report-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .daily-report-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media print {
   .admin-console {
+    padding: 0;
+  }
+
+  .daily-report-section {
+    display: none !important;
+  }
+
+  body.print-daily-report .admin-hero,
+  body.print-daily-report .officer-console,
+  body.print-daily-report .admin-layout {
+    display: none !important;
+  }
+
+  body.print-daily-report .daily-report-section {
+    display: grid !important;
+    border: 0;
+    box-shadow: none;
     padding: 0;
   }
 }

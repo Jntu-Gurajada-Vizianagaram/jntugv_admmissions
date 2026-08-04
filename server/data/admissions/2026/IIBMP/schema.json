@@ -18,14 +18,12 @@
     "personal",
     "education",
     "additionalDocuments",
-    "payment",
     "declaration"
   ],
   "documentRules": {
     "rankCards": "Required for every selected competitive exam",
     "aadhaar": "Required for all candidates",
     "caste": "Required when category is not OC",
-    "educationCertificates": "Required on each education row",
-    "paymentProof": "Required when payment process is declared"
+    "educationCertificates": "Required on each education row"
   }
 }

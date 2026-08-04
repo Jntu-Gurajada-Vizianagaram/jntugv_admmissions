@@ -49,7 +49,6 @@ const IIBMP_2026_SCHEMA = {
     'personal',
     'education',
     'additionalDocuments',
-    'payment',
     'declaration',
   ],
   documentRules: {
@@ -57,7 +56,6 @@ const IIBMP_2026_SCHEMA = {
     aadhaar: 'Required for all candidates',
     caste: 'Required when category is not OC',
     educationCertificates: 'Required on each education row',
-    paymentProof: 'Required when payment process is declared',
   },
 };
 
@@ -1155,9 +1153,8 @@ const notifyApplicationUpdated = async (record, previousStatus) => {
 };
 
 const notifyDepartmentLoginCreated = async ({ user, password }) => {
-  const recipient = user.username.includes('@') ? user.username : ADMIN_NOTIFY_EMAIL;
-  await sendMailSafe({
-    to: recipient,
+  return sendMailSafe({
+    to: user.username,
     subject: 'JNTUGV Admissions Portal Login Created',
     text: [
       `Dear ${user.name},`,
@@ -1339,6 +1336,22 @@ const notifyPasswordResetLink = async ({ user, token, expiresAt }) => {
 };
 
 const createApplicantPassword = () => crypto.randomBytes(6).toString('base64url');
+
+const createDepartmentPassword = () => {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghijkmnopqrstuvwxyz';
+  const digits = '23456789';
+  const symbols = '!@#$%';
+  const all = `${upper}${lower}${digits}${symbols}`;
+  const pick = characters => characters[crypto.randomInt(characters.length)];
+  const required = [pick(upper), pick(lower), pick(digits), pick(symbols)];
+  const remaining = Array.from({ length: 8 }, () => pick(all));
+  return [...required, ...remaining]
+    .map(value => ({ value, order: crypto.randomInt(0x100000000) }))
+    .sort((a, b) => a.order - b.order)
+    .map(item => item.value)
+    .join('');
+};
 
 const createApplicantUsername = async (year, processCode) => {
   const serialKey = `${processCode}-APPLICANT`;
@@ -1865,8 +1878,13 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/admin/officers') {
-      const adminUser = await requireSuperAdmin(req, res);
+      const adminUser = req.method === 'GET'
+        ? await requireAdminUser(req, res)
+        : await requireSuperAdmin(req, res);
       if (!adminUser) return;
+      if (req.method === 'GET' && !['admin', 'co-convenor'].includes(adminUser.role)) {
+        return json(res, 403, { message: 'Convenor or Co-convenor access required' });
+      }
       const users = await loadAdminUsers();
 
       if (req.method === 'GET') {
@@ -1875,24 +1893,24 @@ const server = createServer(async (req, res) => {
 
       if (req.method === 'POST') {
         const body = await readBody(req);
-        const username = String(body.username || '').trim();
-        const password = String(body.password || '').trim();
+        const email = String(body.email || '').trim().toLowerCase();
         const name = String(body.name || '').trim();
-        const allowedRoles = new Set(['admin', 'co-convenor', 'officer']);
+        const allowedRoles = new Set(['co-convenor', 'officer']);
         const role = allowedRoles.has(body.role) ? body.role : 'officer';
 
-        if (!username || !password || !name) {
-          return json(res, 400, { message: 'Name, username, and password are required' });
+        if (!name || !/^\S+@\S+\.\S+$/.test(email)) {
+          return json(res, 400, { message: 'A valid name and email address are required' });
         }
 
-        if (users.some(user => user.username.toLowerCase() === username.toLowerCase())) {
-          return json(res, 409, { message: 'Username already exists' });
+        if (users.some(user => user.username.toLowerCase() === email)) {
+          return json(res, 409, { message: 'A department login already exists for this email address' });
         }
 
+        const password = createDepartmentPassword();
         const hashed = hashPassword(password);
         const user = {
-          id: `user-${Date.now()}`,
-          username,
+          id: `user-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
+          username: email,
           name,
           role,
           active: true,
@@ -1902,8 +1920,15 @@ const server = createServer(async (req, res) => {
         };
         users.push(user);
         await saveAdminUsers(users);
-        await notifyDepartmentLoginCreated({ user, password });
-        return json(res, 201, publicUser(user));
+        const mailResult = await notifyDepartmentLoginCreated({ user, password });
+        return json(res, 201, {
+          user: publicUser(user),
+          credentialsSent: Boolean(mailResult?.sent),
+          message: mailResult?.sent
+            ? `Login created and credentials sent to ${email}.`
+            : `Login created, but the credentials email could not be delivered to ${email}.`,
+          ...(!mailResult?.sent ? { temporaryPassword: password } : {}),
+        });
       }
     }
 
@@ -1959,6 +1984,7 @@ const server = createServer(async (req, res) => {
       const status = url.searchParams.get('status') || '';
       const records = await loadApplications(year, processCode);
       const filtered = records
+        .filter(record => adminUser.role !== 'officer' || record.assignedOfficerId === adminUser.id)
         .filter(record => !status || record.status === status)
         .filter(record => {
           if (!search) return true;
@@ -1985,6 +2011,10 @@ const server = createServer(async (req, res) => {
         return json(res, 404, { message: 'Application not found' });
       }
 
+      if (adminUser.role === 'officer' && record.assignedOfficerId !== adminUser.id) {
+        return json(res, 403, { message: 'This application is not assigned to your account' });
+      }
+
       if (req.method === 'GET') {
         return json(res, 200, record);
       }
@@ -1993,9 +2023,29 @@ const server = createServer(async (req, res) => {
         const body = await readBody(req);
         const previousStatus = record.status;
         const nextStatus = body.status || record.status;
+        if (Array.isArray(body.payments)) {
+          const existingPayments = Array.isArray(record.application?.payments) ? record.application.payments : [];
+          record.application = {
+            ...record.application,
+            payments: PAYMENT_TITLES.map((title, index) => {
+              const incoming = body.payments[index] || {};
+              return {
+                ...(existingPayments[index] || {}),
+                title,
+                amount: String(incoming.amount || incoming.fee || '').trim(),
+                txn_ref: String(incoming.txn_ref || incoming.referenceNo || '').trim().toUpperCase(),
+                txn_date: String(incoming.txn_date || incoming.transactionDate || '').trim(),
+                mode: String(incoming.mode || '').trim().toUpperCase(),
+                status: String(incoming.status || '').trim(),
+              };
+            }),
+          };
+        }
         Object.assign(record, {
           status: nextStatus,
-          assignedOfficerId: body.assignedOfficerId ?? record.assignedOfficerId ?? '',
+          assignedOfficerId: ['admin', 'co-convenor'].includes(adminUser.role)
+            ? body.assignedOfficerId ?? record.assignedOfficerId ?? ''
+            : record.assignedOfficerId ?? '',
           verificationNotes: body.verificationNotes ?? record.verificationNotes,
           verificationStages: body.verificationStages && typeof body.verificationStages === 'object'
             ? VERIFICATION_STAGES.reduce((stages, stage) => ({

@@ -62,13 +62,7 @@ const createInitialData = () => ({
     doc_aadhar: null,
     doc_caste: null,
   },
-  payments: [
-    { fee: '2000', txn_ref: '', txn_date: '', mode: '', status: '', proofFile: null },
-    { fee: '', txn_ref: '', txn_date: '', mode: '', status: '', proofFile: null },
-  ],
-  paymentStatus: '',
-  transactionId: '',
-  paymentDate: '',
+  payments: [],
   declaration: {
     station: '',
     date: todayValue(),
@@ -105,18 +99,7 @@ const createSubmissionPayload = async (data) => ({
     ...row,
     certificateFile: await fileToPayload(row.certificateFile),
   }))),
-  payments: await Promise.all(data.payments.map(async (payment, index) => ({
-    ...payment,
-    fee: index === 0
-      ? '2000'
-      : index === 1 && (
-        payment.txn_ref
-        || payment.txn_date
-        || payment.mode
-        || payment.proofFile
-      ) ? '150000' : payment.fee,
-    proofFile: await fileToPayload(payment.proofFile),
-  }))),
+  payments: [],
   documents: Object.fromEntries(
     await Promise.all(Object.entries(serializeDocuments(data.documents)).map(async ([key, value]) => [key, await fileToPayload(value)]))
   ),
@@ -191,7 +174,7 @@ export function FormProvider({ children }) {
   const update = (fields) => setData(prev => ({ ...prev, ...fields }))
   const updateData = (nextData) => setData(nextData)
 
-  const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 6))
+  const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 5))
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1))
 
   const saveDraft = useCallback(async (nextData = data, nextStepValue = currentStep, mode = 'manual') => {
@@ -238,7 +221,7 @@ export function FormProvider({ children }) {
 
         if (draft?.data) {
           setData(draft.data)
-          setCurrentStep(Number(draft.currentStep) || 1)
+          setCurrentStep(Math.min(Number(draft.currentStep) || 1, 5))
           setApplicantLogin(draft.applicantLogin || null)
           setLastDraftSavedAt(draft.savedAt || '')
           setHasSavedDraft(true)
@@ -307,25 +290,6 @@ export function FormProvider({ children }) {
     })
   }
 
-  const updatePayment = (index, field, value) => {
-    setData(prev => {
-      const payments = [...(prev.payments || [])]
-      payments[index] = { ...payments[index], [field]: value }
-      return { ...prev, payments }
-    })
-  }
-
-  const addPaymentRow = () => {
-    setData(prev => ({
-      ...prev,
-      payments: [...(prev.payments || []), { fee: '', txn_ref: '', txn_date: '', mode: '', status: '', proofFile: null }],
-    }))
-  }
-
-  const removePaymentRow = (index) => {
-    setData(prev => ({ ...prev, payments: (prev.payments || []).filter((_, i) => i !== index) }))
-  }
-
   const updateDocument = (key, value) => {
     setData(prev => ({ ...prev, documents: { ...prev.documents, [key]: value } }))
   }
@@ -389,7 +353,7 @@ export function FormProvider({ children }) {
       education: Array.isArray(draft.data.education) && draft.data.education.length ? draft.data.education : prev.education,
       payments: Array.isArray(draft.data.payments) && draft.data.payments.length ? draft.data.payments : prev.payments,
     }))
-    setCurrentStep(Number(draft.currentStep) || 1)
+    setCurrentStep(Math.min(Number(draft.currentStep) || 1, 5))
     setLastDraftSavedAt(draft.savedAt || '')
     setHasSavedDraft(true)
     setSubmitted(false)
@@ -415,9 +379,6 @@ export function FormProvider({ children }) {
       updateEducation,
       addEducationRow,
       removeEducationRow,
-      updatePayment,
-      addPaymentRow,
-      removePaymentRow,
       updateDocument,
       submitted,
       submitForm,

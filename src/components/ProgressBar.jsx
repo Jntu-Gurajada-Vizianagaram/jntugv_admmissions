@@ -9,7 +9,6 @@ export default function ProgressBar({ currentStep, totalSteps }) {
     'Personal Info',
     'Qualifications',
     'Documents',
-    'Payment',
     'Review'
   ];
 
