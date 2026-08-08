@@ -490,7 +490,8 @@
 
 .admin-review-card,
 .admin-verification,
-.admin-review-step {
+.admin-review-step,
+.admin-final-admission {
   display: grid;
   gap: 1rem;
   padding: 1rem;
@@ -522,13 +523,15 @@
 }
 
 .admin-review-step h3,
-.admin-verification-heading h3 {
+.admin-verification-heading h3,
+.admin-final-admission h3 {
   margin: 0;
   color: var(--primary-blue);
 }
 
 .admin-review-step p,
-.admin-verification-heading p {
+.admin-verification-heading p,
+.admin-final-admission p {
   margin: 0.25rem 0 0;
   color: var(--text-muted);
 }
@@ -545,6 +548,17 @@
 .admin-assignment-grid {
   display: grid;
   gap: 0.75rem;
+}
+
+.admin-final-admission {
+  align-items: center;
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+.admin-final-admission.ready {
+  border-color: #86efac;
+  background: #f0fdf4;
 }
 
 .admin-verification label,
@@ -672,6 +686,10 @@
   }
 
   .admin-review-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .admin-final-admission {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 }

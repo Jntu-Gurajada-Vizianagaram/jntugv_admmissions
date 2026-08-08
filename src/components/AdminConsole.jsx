@@ -22,7 +22,9 @@ import PasswordField from './PasswordField';
 import { printApplication } from '../utils/printApplication';
 import './AdminConsole.css';
 
-const STATUSES = ['Submitted', 'Under Review / Verification in Progress', 'Verified', 'Needs Correction', 'Rejected'];
+const FINAL_ADMISSION_STATUS = 'Admitted Submitted';
+const REVIEW_STATUSES = ['Submitted', 'Under Review / Verification in Progress', 'Verified', 'Needs Correction', 'Rejected'];
+const STATUSES = [...REVIEW_STATUSES, FINAL_ADMISSION_STATUS];
 const ROLE_LABELS = {
   admin: 'Convenor',
   'co-convenor': 'Co-convenor',
@@ -48,7 +50,7 @@ const emptyStageNotes = () => Object.fromEntries(STATUSES.map(status => [status,
 const normalizeStatus = (status = 'Submitted') => (
   status === 'Under Review' ? 'Under Review / Verification in Progress' : status
 );
-const canManageAdmissions = (user) => ['admin', 'co-convenor'].includes(user?.role);
+const canManageAdmissions = (user) => user?.role === 'admin';
 const roleLabel = (role) => ROLE_LABELS[role] || role;
 const reportDateKey = (value = new Date()) => new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Kolkata',
@@ -254,6 +256,10 @@ export default function AdminConsole() {
 
   const hasAssignment = Boolean(assignedOfficerId || selected?.assignedOfficerId);
   const hasVerificationRemarks = Boolean(verificationNotes.trim());
+  const isAssignedReviewer = Boolean(selected && hasAssignment && selected.assignedOfficerId === adminUser?.id);
+  const canEditReview = Boolean(isAssignedReviewer);
+  const canFinalizeAdmission = Boolean(isConvenor && selected?.status === 'Verified');
+  const reviewStatusSelectValue = REVIEW_STATUSES.includes(reviewStatus) ? reviewStatus : 'Verified';
 
   const saveAssignment = async () => {
     if (!selected || !canManageAdmissions(adminUser)) return;
@@ -266,12 +272,7 @@ export default function AdminConsole() {
     setReviewMessage('');
     try {
       const record = await updateAdminApplication(selected.registrationNo, {
-        status: reviewStatus,
         assignedOfficerId,
-        verifiedBy: verifiedBy.trim() || currentVerifierName,
-        verificationNotes,
-        verificationStages,
-        payments: paymentRows,
       });
       setSelected(record);
       setAssignedOfficerId(record.assignedOfficerId || assignedOfficerId);
@@ -291,13 +292,16 @@ export default function AdminConsole() {
       setError('Save the application assignment before entering payment details.');
       return;
     }
+    if (!canEditReview) {
+      setError('Only the assigned officer can enter payment details for this application.');
+      return;
+    }
     setLoading(true);
     setError('');
     setReviewMessage('');
     try {
       const record = await updateAdminApplication(selected.registrationNo, {
         status: reviewStatus,
-        ...(canManageAdmissions(adminUser) ? { assignedOfficerId } : {}),
         verifiedBy: verifiedBy.trim() || currentVerifierName,
         verificationNotes,
         verificationStages,
@@ -320,6 +324,14 @@ export default function AdminConsole() {
       setError('Save the application assignment before saving verification status.');
       return;
     }
+    if (!canEditReview) {
+      setError('Only the assigned officer can save verification remarks for this application.');
+      return;
+    }
+    if (reviewStatus === FINAL_ADMISSION_STATUS) {
+      setError('Use the convenor final admission step after the application is verified.');
+      return;
+    }
     if (!hasVerificationRemarks) {
       setError('Verification remarks are required before saving the verification status.');
       return;
@@ -335,7 +347,6 @@ export default function AdminConsole() {
       const verifierName = verifiedBy.trim() || currentVerifierName;
       const record = await updateAdminApplication(selected.registrationNo, {
         status: reviewStatus,
-        ...(canManageAdmissions(adminUser) ? { assignedOfficerId } : {}),
         verifiedBy: verifierName,
         verificationNotes,
         verificationStages,
@@ -345,10 +356,39 @@ export default function AdminConsole() {
       setAssignedOfficerId(record.assignedOfficerId || '');
       setVerifiedBy(record.verifiedBy || verifierName);
       setPaymentRows(normalizePaymentRows(record.application?.payments));
+      setPaymentSaved(hasPaymentEntry(record.application?.payments));
       setReviewMessage('Verification status and remarks saved.');
       await loadRecords();
     } catch (err) {
       setError(err.message || 'Unable to update verification');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const finalizeAdmission = async () => {
+    if (!selected || !isConvenor) return;
+    if (selected.status !== 'Verified') {
+      setError('Only verified applications can be marked as Admitted Submitted.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setReviewMessage('');
+    try {
+      const record = await updateAdminApplication(selected.registrationNo, {
+        status: FINAL_ADMISSION_STATUS,
+      });
+      const normalizedStatus = normalizeStatus(record.status);
+      setSelected({ ...record, status: normalizedStatus });
+      setReviewStatus(normalizedStatus);
+      setAssignedOfficerId(record.assignedOfficerId || '');
+      setPaymentRows(normalizePaymentRows(record.application?.payments));
+      setPaymentSaved(hasPaymentEntry(record.application?.payments));
+      setReviewMessage('Application marked as Admitted Submitted for the course.');
+      await loadRecords();
+    } catch (err) {
+      setError(err.message || 'Unable to finalize admission');
     } finally {
       setLoading(false);
     }
@@ -854,13 +894,14 @@ export default function AdminConsole() {
                 </div>
               </div>
 
+              {error && <div className="status-error no-print">{error}</div>}
               {reviewMessage && <div className="status-success no-print">{reviewMessage}</div>}
 
               <section className="admin-review-step no-print">
                 <div>
                   <p className="admin-step-kicker">Step 1</p>
                   <h3>Assign Application</h3>
-                  <p>Assign the record before payment entry and verification status update.</p>
+                  <p>The Convenor must assign the record before payment entry and verification review.</p>
                 </div>
                 <div className="admin-assignment-grid">
                 {canManageAdmissions(adminUser) && (
@@ -877,12 +918,12 @@ export default function AdminConsole() {
                 {!canManageAdmissions(adminUser) && (
                   <label>
                     Assigned To
-                    <input value={selected.assignedOfficerName || currentVerifierName || 'Assigned officer'} readOnly />
+                    <input value={selected.assignedOfficerName || 'Not assigned to your account'} readOnly />
                   </label>
                 )}
                 <label>
                   Verified By
-                  <input value={verifiedBy} onChange={(event) => setVerifiedBy(event.target.value)} placeholder="Officer name" />
+                  <input value={verifiedBy} onChange={(event) => setVerifiedBy(event.target.value)} placeholder="Officer name" disabled={!canEditReview} />
                 </label>
                 {canManageAdmissions(adminUser) && (
                   <button type="button" className="btn btn-accent" onClick={saveAssignment} disabled={loading || !assignedOfficerId}>
@@ -893,13 +934,13 @@ export default function AdminConsole() {
                 </div>
               </section>
 
-              <section className={`admin-payment-entry no-print ${!hasAssignment ? 'locked' : ''}`}>
+              <section className={`admin-payment-entry no-print ${!canEditReview ? 'locked' : ''}`}>
                 <div>
                   <p className="admin-step-kicker">Step 2</p>
                   <h3>Payment Details for Verified Print Sheet</h3>
-                  <p>{hasAssignment ? 'Enter payment information received from the candidate. Saved values will appear in subsequent application printouts.' : 'Save assignment first to unlock payment entry.'}</p>
+                  <p>{canEditReview ? 'Enter payment information received from the candidate. Saved values will appear in subsequent application printouts.' : 'Only the assigned reviewer can enter payment details after convenor assignment.'}</p>
                 </div>
-                <fieldset className="admin-locked-fieldset" disabled={!hasAssignment || loading}>
+                <fieldset className="admin-locked-fieldset" disabled={!canEditReview || loading}>
                   <div className="admin-payment-table-wrap">
                     <table className="admin-payment-table">
                       <thead>
@@ -929,7 +970,7 @@ export default function AdminConsole() {
                 </fieldset>
                 <div className="admin-payment-save-row">
                   <p className="admin-payment-save-note">Payment details are stored with the verification record.</p>
-                  <button type="button" className="btn btn-accent" onClick={savePaymentDetails} disabled={loading || !hasAssignment}>
+                  <button type="button" className="btn btn-accent" onClick={savePaymentDetails} disabled={loading || !canEditReview}>
                     <CheckCircle2 size={17} /> Save Payment Details
                   </button>
                 </div>
@@ -939,23 +980,37 @@ export default function AdminConsole() {
                 <div className="admin-verification-heading">
                   <p className="admin-step-kicker">Step 3</p>
                   <h3>Verification Status</h3>
-                  <p>Save assignment and payment details first, then choose the status and add compulsory remarks.</p>
+                  <p>The assigned reviewer checks the application and documents, then saves payment details and compulsory remarks.</p>
                 </div>
                 <label>
                   Status
-                  <select value={reviewStatus} onChange={(event) => setReviewStatus(event.target.value)} disabled={!hasAssignment}>
-                    {STATUSES.map(item => <option key={item} value={item}>{item}</option>)}
+                  <select value={reviewStatusSelectValue} onChange={(event) => setReviewStatus(event.target.value)} disabled={!canEditReview}>
+                    {REVIEW_STATUSES.map(item => <option key={item} value={item}>{item}</option>)}
                   </select>
                 </label>
                 <label className="admin-notes">
                   Verification Remarks *
-                  <textarea value={verificationNotes} onChange={(event) => setVerificationNotes(event.target.value)} placeholder="Document remarks, corrections, counselling notes" disabled={!hasAssignment} />
+                  <textarea value={verificationNotes} onChange={(event) => setVerificationNotes(event.target.value)} placeholder="Document remarks, corrections, counselling notes" disabled={!canEditReview} />
                 </label>
-                <button type="button" className="btn btn-accent" onClick={saveVerification} disabled={loading || !hasAssignment || !paymentSaved || !hasVerificationRemarks}>
+                <button type="button" className="btn btn-accent" onClick={saveVerification} disabled={loading || !canEditReview || !paymentSaved || !hasVerificationRemarks}>
                   <CheckCircle2 size={17} />
                   Save Verification
                 </button>
               </div>
+
+              {isConvenor && (
+                <section className={`admin-final-admission no-print ${canFinalizeAdmission ? 'ready' : ''}`}>
+                  <div>
+                    <p className="admin-step-kicker">Step 4</p>
+                    <h3>Convenor Admission Submission</h3>
+                    <p>{canFinalizeAdmission ? 'The application is verified and ready for final course admission submission.' : 'Final admission submission opens after the assigned reviewer marks the application as Verified.'}</p>
+                  </div>
+                  <button type="button" className="btn btn-primary" onClick={finalizeAdmission} disabled={loading || !canFinalizeAdmission}>
+                    <CheckCircle2 size={17} />
+                    Mark as Admitted Submitted
+                  </button>
+                </section>
+              )}
 
               <section className="admin-stage-reviews no-print">
                 <h3>{reviewStatus} Verification Review</h3>
@@ -966,6 +1021,7 @@ export default function AdminConsole() {
                       value={verificationStages[reviewStatus] || ''}
                       onChange={(event) => setVerificationStages(prev => ({ ...prev, [reviewStatus]: event.target.value }))}
                       placeholder={`Review remarks for ${reviewStatus}`}
+                      disabled={!canEditReview}
                     />
                   </label>
                 </div>

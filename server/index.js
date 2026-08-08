@@ -23,7 +23,9 @@ const APPLICANT_DRAFTS_FILE = path.join(DATA_DIR, 'applicant-drafts.json');
 const DEFAULT_YEAR = '2026';
 const DEFAULT_PROCESS = 'IIBMP';
 const MAX_BODY_SIZE = 120_000_000;
-const VERIFICATION_STAGES = ['Submitted', 'Under Review / Verification in Progress', 'Verified', 'Needs Correction', 'Rejected'];
+const FINAL_ADMISSION_STATUS = 'Admitted Submitted';
+const VERIFICATION_STAGES = ['Submitted', 'Under Review / Verification in Progress', 'Verified', 'Needs Correction', 'Rejected', FINAL_ADMISSION_STATUS];
+const REVIEW_STATUSES = VERIFICATION_STAGES.filter(status => status !== FINAL_ADMISSION_STATUS);
 const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || 'jntugv-admissions-local-secret';
 const APPLICATION_OPENS_AT = new Date('2026-07-30T17:00:00+05:30').getTime();
 const APPLICATION_OPEN_OVERRIDE = String(process.env.APPLICATION_OPEN_OVERRIDE || '').toLowerCase() === 'true';
@@ -823,6 +825,10 @@ const extractPayments = (record) => (
     }))
     .filter(payment => payment.txnRef || payment.txnDate || payment.proofName)
 );
+
+const hasPaymentEntry = (payments = []) => payments.some(payment => (
+  payment.amount || payment.fee || payment.txn_ref || payment.referenceNo || payment.txn_date || payment.transactionDate || payment.mode || payment.status
+));
 
 const saveApplicationPayments = async (db, record) => {
   await db.query('DELETE FROM application_payments WHERE registration_no = ?', [record.registrationNo]);
@@ -2209,7 +2215,7 @@ const server = createServer(async (req, res) => {
       const status = url.searchParams.get('status') || '';
       const records = await loadApplications(year, processCode);
       const filtered = records
-        .filter(record => adminUser.role !== 'officer' || record.assignedOfficerId === adminUser.id)
+        .filter(record => adminUser.role === 'admin' || record.assignedOfficerId === adminUser.id)
         .filter(record => !status || record.status === status)
         .filter(record => {
           if (!search) return true;
@@ -2258,7 +2264,7 @@ const server = createServer(async (req, res) => {
         return json(res, 404, { message: 'Application not found' });
       }
 
-      if (adminUser.role === 'officer' && record.assignedOfficerId !== adminUser.id) {
+      if (adminUser.role !== 'admin' && record.assignedOfficerId !== adminUser.id) {
         return json(res, 403, { message: 'This application is not assigned to your account' });
       }
 
@@ -2270,6 +2276,49 @@ const server = createServer(async (req, res) => {
         const body = await readBody(req);
         const previousStatus = record.status;
         const nextStatus = body.status || record.status;
+        const requestedAssignment = body.assignedOfficerId ?? record.assignedOfficerId ?? '';
+        const isAssignmentChange = body.assignedOfficerId !== undefined && body.assignedOfficerId !== (record.assignedOfficerId ?? '');
+        const hasPaymentUpdate = Array.isArray(body.payments);
+        const hasVerificationUpdate = body.verificationNotes !== undefined || body.verificationStages !== undefined || body.verifiedBy !== undefined;
+        const hasStatusUpdate = body.status !== undefined && body.status !== record.status;
+        const isReviewerUpdate = hasPaymentUpdate || hasVerificationUpdate || (hasStatusUpdate && nextStatus !== FINAL_ADMISSION_STATUS);
+
+        if (isAssignmentChange && adminUser.role !== 'admin') {
+          return json(res, 403, { message: 'Only the Convenor can assign or reassign applications' });
+        }
+
+        if (!REVIEW_STATUSES.includes(nextStatus) && nextStatus !== FINAL_ADMISSION_STATUS) {
+          return json(res, 400, { message: 'Invalid application status' });
+        }
+
+        if (nextStatus === FINAL_ADMISSION_STATUS) {
+          if (adminUser.role !== 'admin') {
+            return json(res, 403, { message: 'Only the Convenor can submit the final admission status' });
+          }
+          if (record.status !== 'Verified') {
+            return json(res, 400, { message: 'Application must be verified before final admission submission' });
+          }
+        }
+
+        if (isReviewerUpdate && record.assignedOfficerId !== adminUser.id) {
+          return json(res, 403, { message: 'Only the assigned reviewer can enter payment details and verification remarks' });
+        }
+
+        if (isReviewerUpdate && !record.assignedOfficerId) {
+          return json(res, 400, { message: 'Application must be assigned before review' });
+        }
+
+        if (nextStatus === 'Verified') {
+          const incomingPayments = hasPaymentUpdate ? body.payments : record.application?.payments;
+          const incomingNotes = body.verificationNotes ?? record.verificationNotes ?? '';
+          if (!hasPaymentEntry(incomingPayments)) {
+            return json(res, 400, { message: 'Payment details are required before marking the application as Verified' });
+          }
+          if (!String(incomingNotes).trim()) {
+            return json(res, 400, { message: 'Verification remarks are required before marking the application as Verified' });
+          }
+        }
+
         if (Array.isArray(body.payments)) {
           const existingPayments = Array.isArray(record.application?.payments) ? record.application.payments : [];
           record.application = {
@@ -2290,8 +2339,8 @@ const server = createServer(async (req, res) => {
         }
         Object.assign(record, {
           status: nextStatus,
-          assignedOfficerId: ['admin', 'co-convenor'].includes(adminUser.role)
-            ? body.assignedOfficerId ?? record.assignedOfficerId ?? ''
+          assignedOfficerId: adminUser.role === 'admin'
+            ? requestedAssignment
             : record.assignedOfficerId ?? '',
           verificationNotes: body.verificationNotes ?? record.verificationNotes,
           verificationStages: body.verificationStages && typeof body.verificationStages === 'object'
@@ -2301,7 +2350,7 @@ const server = createServer(async (req, res) => {
             }), {})
             : record.verificationStages || {},
           verifiedBy: body.verifiedBy ?? record.verifiedBy,
-          verifiedAt: ['Verified', 'Rejected', 'Needs Correction'].includes(nextStatus)
+          verifiedAt: ['Verified', 'Rejected', 'Needs Correction', FINAL_ADMISSION_STATUS].includes(nextStatus)
             ? new Date().toISOString()
             : record.verifiedAt,
         });
