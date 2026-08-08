@@ -51,8 +51,8 @@ const administrationProfiles = [
     name: 'Dr. Shaik Kalesha Vali',
     role: 'Director of Admissions',
     email: 'da@jntugv.edu.in',
-    image: 'https://jntugv.edu.in/assets/diqac-DNVfObaK.jpeg',
-    summary: "Director (i/c) of IQAC and Officer on Special Duty to Hon'ble Vice-Chancellor; Professor of Mathematics, Dept. of BS&HSS.",
+    image: 'https://jntugv.edu.in/assets/da-DNVfObaK.jpeg',
+    summary: "Officer on Special Duty to Hon'ble Vice-Chancellor and Director (i/c) of IQAC; Professor of Mathematics, Dept. of BS&HSS - JNTU-GV CEV.",
   },
 ];
 
