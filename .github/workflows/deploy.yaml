@@ -169,6 +169,13 @@ jobs:
           tar -xzf /tmp/source.tar.gz -C "$DEPLOY_PATH"
           rm -f /tmp/source.tar.gz
 
+          if ! grep -q "/api/admin/applicant-drafts" server/index.js \
+            || ! grep -q "/api/admin/application-reports" server/index.js; then
+            echo "Deployed source is missing required admin report routes."
+            echo "Check that source.tar.gz was created from the latest commit and extracted into DEPLOY_PATH."
+            exit 1
+          fi
+
           node -v
           npm -v
           npm ci --omit=dev
@@ -179,7 +186,7 @@ jobs:
           if command -v pm2 >/dev/null 2>&1; then
             pm2 delete "$PM2_FRONTEND_APP_NAME" >/dev/null 2>&1 || true
             pm2 delete "$PM2_APP_NAME" >/dev/null 2>&1 || true
-            pm2 startOrReload ecosystem.config.cjs --env production --update-env
+            pm2 start ecosystem.config.cjs --env production --update-env
             pm2 save
           elif command -v systemctl >/dev/null 2>&1 && systemctl list-unit-files "$SERVICE_NAME.service" --no-legend | grep -q "$SERVICE_NAME.service"; then
             sudo systemctl restart "$SERVICE_NAME"
@@ -189,15 +196,24 @@ jobs:
           fi
 
           for attempt in $(seq 1 15); do
+            drafts_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:5000/api/admin/applicant-drafts || true)"
+            reports_status="$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:5000/api/admin/application-reports || true)"
             if curl --fail --silent --show-error http://127.0.0.1:5000/api/health >/dev/null \
-              && curl --fail --silent --show-error http://127.0.0.1:5175/ >/dev/null; then
+              && curl --fail --silent --show-error http://127.0.0.1:5175/ >/dev/null \
+              && [ "$drafts_status" = "401" ] \
+              && [ "$reports_status" = "401" ]; then
               echo "Deployment completed successfully."
               exit 0
             fi
+            echo "Waiting for updated API routes. applicant-drafts=$drafts_status application-reports=$reports_status"
             sleep 2
           done
 
           echo "Health check failed after deployment."
+          if command -v pm2 >/dev/null 2>&1; then
+            pm2 list || true
+            pm2 logs "$PM2_APP_NAME" --lines 80 --nostream || true
+          fi
           sudo systemctl status "$SERVICE_NAME" --no-pager || true
           exit 1
           REMOTE
