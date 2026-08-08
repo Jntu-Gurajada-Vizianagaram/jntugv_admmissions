@@ -9,8 +9,8 @@ import {
   createVerificationOfficer,
   getAdminApplication,
   getAdminSession,
+  listAdminApplicationReports,
   listAdminApplications,
-  listAdminDrafts,
   listVerificationOfficers,
   requestAdminPasswordReset,
   updateAdminApplication,
@@ -63,7 +63,7 @@ const reportDateTime = (value) => (
     : 'Not available'
 );
 const csvCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-const reviewPath = (registrationNo) => `/admin/applications/${encodeURIComponent(registrationNo)}`;
+const reviewPath = (registrationNo) => `/admin/applications#${encodeURIComponent(registrationNo)}`;
 
 export default function AdminConsole() {
   const location = useLocation();
@@ -79,8 +79,7 @@ export default function AdminConsole() {
   const [resetUser, setResetUser] = useState(null);
   const [newPasswordForm, setNewPasswordForm] = useState({ password: '', confirmPassword: '' });
   const [records, setRecords] = useState([]);
-  const [reportRecords, setReportRecords] = useState([]);
-  const [draftRecords, setDraftRecords] = useState([]);
+  const [reportRows, setReportRows] = useState([]);
   const [reportDate, setReportDate] = useState('');
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
@@ -103,7 +102,7 @@ export default function AdminConsole() {
   const departmentLogins = officers.filter(officer => ['co-convenor', 'officer'].includes(officer.role));
   const activeSection = location.pathname.split('/')[2] || 'dashboard';
   const routeRegistrationNo = activeSection === 'applications'
-    ? decodeURIComponent(location.pathname.split('/')[3] || '')
+    ? decodeURIComponent((location.hash || '').replace(/^#/, '') || location.pathname.split('/')[3] || '')
     : '';
   const isConvenor = adminUser?.role === 'admin';
   const permittedSections = isConvenor
@@ -133,12 +132,8 @@ export default function AdminConsole() {
   const loadReportRecords = useCallback(async () => {
     if (adminUser?.role !== 'admin') return;
     try {
-      const [applicationsResult, draftsResult] = await Promise.all([
-        listAdminApplications(),
-        listAdminDrafts(),
-      ]);
-      setReportRecords(applicationsResult.applications || []);
-      setDraftRecords(draftsResult.drafts || []);
+      const result = await listAdminApplicationReports();
+      setReportRows(result.reports || []);
     } catch (err) {
       setError(err.message || 'Unable to load daily applications report');
     }
@@ -202,8 +197,7 @@ export default function AdminConsole() {
     setAdminUser(null);
     setSelected(null);
     setRecords([]);
-    setReportRecords([]);
-    setDraftRecords([]);
+    setReportRows([]);
     navigate('/admin', { replace: true });
   };
 
@@ -328,17 +322,17 @@ export default function AdminConsole() {
 
   const dailyApplications = useMemo(() => (
     reportDate
-      ? reportRecords.filter(record => reportDateKey(record.submittedAt) === reportDate)
-      : reportRecords
-  ), [reportDate, reportRecords]);
+      ? reportRows.filter(record => record.applicationStatus === 'Submitted' && reportDateKey(record.activityDate) === reportDate)
+      : reportRows.filter(record => record.applicationStatus === 'Submitted')
+  ), [reportDate, reportRows]);
 
   const dailyDrafts = useMemo(() => (
     reportDate
-      ? draftRecords.filter(record => reportDateKey(record.savedAt) === reportDate)
-      : draftRecords
-  ), [draftRecords, reportDate]);
+      ? reportRows.filter(record => record.applicationStatus === 'Under Process' && reportDateKey(record.activityDate) === reportDate)
+      : reportRows.filter(record => record.applicationStatus === 'Under Process')
+  ), [reportDate, reportRows]);
 
-  const reportScopeLabel = reportDate ? `for ${reportDate}` : 'for all dates';
+  const reportScopeLabel = reportDate ? `for ${reportDate}` : 'till date';
 
   const dailyCounts = useMemo(() => ({
     total: dailyApplications.length,
@@ -351,32 +345,34 @@ export default function AdminConsole() {
     reportDate
     && !dailyApplications.length
     && !dailyDrafts.length
-    && (reportRecords.length || draftRecords.length),
+    && reportRows.length,
   );
+  const allSubmittedReportCount = reportRows.filter(record => record.applicationStatus === 'Submitted').length;
+  const allDraftReportCount = reportRows.filter(record => record.applicationStatus === 'Under Process').length;
 
   const downloadDailyReport = () => {
     const header = ['Type', 'Registration / Login', 'Candidate', 'Mobile', 'Email', 'Programme', 'Status', 'Step', 'Date Time'];
     const submittedRows = dailyApplications.map(record => [
       'Submitted',
-      record.registrationNo,
-      record.candidateName,
-      record.mobile,
+      record.referenceNo,
+      record.name,
+      record.phoneNumber,
       record.email,
       record.programme,
-      record.status,
+      record.verificationStatus,
       '',
-      record.submittedAt,
+      record.activityDate,
     ]);
     const draftRows = dailyDrafts.map(record => [
       'Draft',
-      record.username,
-      record.candidateName,
-      record.candidateMobile,
-      record.candidateEmail,
+      record.referenceNo,
+      record.name,
+      record.phoneNumber,
+      record.email,
       record.programme,
-      record.status,
+      record.applicationStatus,
       record.currentStep,
-      record.savedAt,
+      record.activityDate,
     ]);
     const blob = new Blob([
       [header, ...submittedRows, ...draftRows].map(row => row.map(csvCell).join(',')).join('\r\n'),
@@ -582,7 +578,7 @@ export default function AdminConsole() {
           {hasFilteredOutReportRows && (
             <div className="admin-report-notice no-print">
               <strong>No records matched {reportDate}.</strong>
-              <span>Clear the date filter to view all {reportRecords.length} submitted and {draftRecords.length} drafted applications.</span>
+              <span>Clear the date filter to view all {allSubmittedReportCount} submitted and {allDraftReportCount} drafted application records.</span>
               <button type="button" className="admin-table-action" onClick={() => setReportDate('')}>All Dates</button>
             </div>
           )}
@@ -590,7 +586,7 @@ export default function AdminConsole() {
           <div className="report-table-panel">
             <div className="report-subsection-title">
               <h4>Received Applications</h4>
-              <p>{reportDate ? 'Filtered submitted applications ready for assignment and verification.' : 'All submitted applications ready for assignment and verification.'}</p>
+              <p>{reportDate ? 'Filtered submitted applications ready for assignment and verification.' : 'All submitted applications received till date.'}</p>
             </div>
             <div className="daily-report-table-wrap">
               <table className="daily-report-table">
@@ -599,16 +595,16 @@ export default function AdminConsole() {
                 </thead>
                 <tbody>
                   {dailyApplications.map((record, index) => (
-                    <tr key={record.registrationNo}>
+                    <tr key={record.referenceNo}>
                       <td>{index + 1}</td>
-                      <td>{record.registrationNo}</td>
-                      <td>{record.candidateName || 'Not provided'}</td>
-                      <td>{record.mobile || 'Not provided'}</td>
+                      <td>{record.referenceNo}</td>
+                      <td>{record.name || 'Not provided'}</td>
+                      <td>{record.phoneNumber || 'Not provided'}</td>
                       <td>{record.programme}</td>
-                      <td><span className="admin-status-pill">{normalizeStatus(record.status)}</span></td>
-                      <td>{reportDateTime(record.submittedAt)}</td>
+                      <td><span className="admin-status-pill">{normalizeStatus(record.verificationStatus)}</span></td>
+                      <td>{reportDateTime(record.activityDate)}</td>
                       <td className="no-print">
-                        <button type="button" className="admin-table-action" onClick={() => reviewRecord(record.registrationNo)}>
+                        <button type="button" className="admin-table-action" onClick={() => reviewRecord(record.referenceNo)}>
                           Review
                         </button>
                       </td>
@@ -625,7 +621,7 @@ export default function AdminConsole() {
           <div className="report-table-panel">
             <div className="report-subsection-title">
               <h4>Drafted Applications</h4>
-              <p>{reportDate ? 'Filtered applicant logins with saved progress.' : 'All applicant logins with saved progress that are not yet final submissions.'}</p>
+              <p>{reportDate ? 'Filtered applicant logins with saved progress.' : 'All applicant logins with saved progress till date.'}</p>
             </div>
             <div className="daily-report-table-wrap">
               <table className="daily-report-table">
@@ -634,15 +630,15 @@ export default function AdminConsole() {
                 </thead>
                 <tbody>
                   {dailyDrafts.map((record, index) => (
-                    <tr key={record.applicantId}>
+                    <tr key={record.referenceNo}>
                       <td>{index + 1}</td>
-                      <td>{record.username || 'Not issued'}</td>
-                      <td>{record.candidateName || 'Not provided'}</td>
-                      <td>{record.candidateMobile || 'Not provided'}</td>
-                      <td>{record.candidateEmail || 'Not provided'}</td>
-                      <td>{record.programme}</td>
+                      <td>{record.referenceNo || 'Not issued'}</td>
+                      <td>{record.name || 'Not provided'}</td>
+                      <td>{record.phoneNumber || 'Not provided'}</td>
+                      <td>{record.email || 'Not provided'}</td>
+                      <td>{record.programme || '-'}</td>
                       <td><span className="admin-status-pill draft">Step {record.currentStep}</span></td>
-                      <td>{reportDateTime(record.savedAt)}</td>
+                      <td>{reportDateTime(record.activityDate)}</td>
                     </tr>
                   ))}
                   {!dailyDrafts.length && (
@@ -707,7 +703,7 @@ export default function AdminConsole() {
           <div className="admin-review-table-wrap">
             <table className="admin-review-table">
               <thead>
-                <tr><th>Registration No.</th><th>Candidate</th><th>Mobile</th><th>Status</th><th>Assigned</th><th>Action</th></tr>
+                <tr><th>Registration No.</th><th>Candidate</th><th>Mobile</th><th>Email</th><th>Programme</th><th>Submitted</th><th>Status</th><th>Assigned</th><th>Action</th></tr>
               </thead>
               <tbody>
                 {records.map(record => (
@@ -715,9 +711,11 @@ export default function AdminConsole() {
                     <td>{record.registrationNo}</td>
                     <td>
                       <strong>{record.candidateName || 'Unnamed Candidate'}</strong>
-                      <span>{record.programme}</span>
                     </td>
                     <td>{record.mobile || 'No mobile'}</td>
+                    <td>{record.email || 'No email'}</td>
+                    <td>{record.programme}</td>
+                    <td>{reportDateTime(record.submittedAt)}</td>
                     <td><span className="admin-status-pill">{normalizeStatus(record.status)}</span></td>
                     <td>{record.assignedOfficerName || 'Unassigned'}</td>
                     <td>
@@ -727,7 +725,7 @@ export default function AdminConsole() {
                     </td>
                   </tr>
                 ))}
-                {!records.length && !loading && <tr><td colSpan="6" className="admin-empty">No applications found.</td></tr>}
+                {!records.length && !loading && <tr><td colSpan="9" className="admin-empty">No applications found.</td></tr>}
               </tbody>
             </table>
           </div>

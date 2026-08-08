@@ -382,7 +382,7 @@
 
 .admin-review-table {
   width: 100%;
-  min-width: 760px;
+  min-width: 1240px;
   border-collapse: collapse;
 }
 
@@ -613,7 +613,7 @@
 
 @media (min-width: 1080px) {
   .admin-layout {
-    grid-template-columns: minmax(700px, 1fr) minmax(520px, 0.78fr);
+    grid-template-columns: 1fr;
     align-items: start;
   }
 

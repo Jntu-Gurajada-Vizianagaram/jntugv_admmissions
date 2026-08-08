@@ -364,7 +364,7 @@ const defaultAdminUsers = () => {
   return [{
     id: 'admin',
     username: process.env.ADMIN_USERNAME || 'admin',
-    name: process.env.ADMIN_NAME || '',
+    name: process.env.ADMIN_NAME || 'Convenor, Admissions',
     role: 'admin',
     active: true,
     salt: password.salt,
@@ -1688,6 +1688,123 @@ const listApplicantDraftsForAdmin = async ({ year = DEFAULT_YEAR, processCode = 
     });
 };
 
+const summarizeApplicationReportRow = (row) => ({
+  referenceNo: row.referenceNo || row.reference_no || '',
+  name: row.name || '',
+  phoneNumber: row.phoneNumber || row.phone_number || '',
+  email: row.email || '',
+  year: row.year || DEFAULT_YEAR,
+  processCode: row.processCode || row.process_code || DEFAULT_PROCESS,
+  programme: row.programme || '',
+  category: row.category || '',
+  currentStep: row.currentStep ?? row.current_step ?? null,
+  applicationStatus: row.applicationStatus || row.application_status || '',
+  verificationStatus: row.verificationStatus || row.verification_status || '',
+  activityDate: row.activityDate || row.activity_date || '',
+});
+
+const listApplicationReportRows = async ({ year = DEFAULT_YEAR, processCode = DEFAULT_PROCESS, search = '' } = {}) => {
+  const normalizedSearch = String(search || '').trim().toLowerCase();
+  const db = await getDb();
+  let rows;
+
+  if (db) {
+    const [result] = await db.query(`
+      SELECT
+        d.applicant_id AS reference_no,
+        a.candidate_name AS name,
+        a.candidate_mobile AS phone_number,
+        a.candidate_email AS email,
+        d.year,
+        d.process_code,
+        NULL AS programme,
+        NULL AS category,
+        d.current_step,
+        'Under Process' AS application_status,
+        NULL AS verification_status,
+        d.saved_at AS activity_date
+      FROM applicant_drafts d
+      LEFT JOIN applicant_accounts a ON a.id = d.applicant_id
+      WHERE d.year = ? AND d.process_code = ?
+
+      UNION ALL
+
+      SELECT
+        ap.registration_no AS reference_no,
+        ap.candidate_name AS name,
+        ap.candidate_mobile AS phone_number,
+        ap.candidate_email AS email,
+        ap.year,
+        ap.process_code,
+        ap.programme,
+        ap.category,
+        NULL AS current_step,
+        'Submitted' AS application_status,
+        ap.status AS verification_status,
+        ap.submitted_at AS activity_date
+      FROM applications ap
+      WHERE ap.year = ? AND ap.process_code = ?
+
+      ORDER BY activity_date DESC
+    `, [year, processCode, year, processCode]);
+
+    rows = result.map(row => summarizeApplicationReportRow({
+      ...row,
+      activity_date: toIsoString(row.activity_date),
+    }));
+  } else {
+    const [drafts, applications] = await Promise.all([
+      listApplicantDraftsForAdmin({ year, processCode }),
+      loadApplications(year, processCode),
+    ]);
+
+    rows = [
+      ...drafts.map(draft => summarizeApplicationReportRow({
+        referenceNo: draft.applicantId,
+        name: draft.candidateName,
+        phoneNumber: draft.candidateMobile,
+        email: draft.candidateEmail,
+        year,
+        processCode,
+        programme: '',
+        category: '',
+        currentStep: draft.currentStep,
+        applicationStatus: 'Under Process',
+        verificationStatus: '',
+        activityDate: draft.savedAt,
+      })),
+      ...applications.map(application => summarizeApplicationReportRow({
+        referenceNo: application.registrationNo,
+        name: application.application?.personal?.name || '',
+        phoneNumber: application.application?.personal?.mobile || '',
+        email: application.application?.personal?.email || '',
+        year: application.year,
+        processCode: application.processCode,
+        programme: application.application?.programme?.applied || 'RUKF-IIBMP',
+        category: application.application?.personal?.category || '',
+        currentStep: null,
+        applicationStatus: 'Submitted',
+        verificationStatus: application.status,
+        activityDate: application.submittedAt,
+      })),
+    ].sort((a, b) => new Date(b.activityDate) - new Date(a.activityDate));
+  }
+
+  return rows.filter(row => {
+    if (!normalizedSearch) return true;
+    return [
+      row.referenceNo,
+      row.name,
+      row.phoneNumber,
+      row.email,
+      row.programme,
+      row.category,
+      row.applicationStatus,
+      row.verificationStatus,
+    ].some(value => String(value || '').toLowerCase().includes(normalizedSearch));
+  });
+};
+
 const notifyApplicantCredentials = async ({ account, password }) => {
   if (!password) return { sent: false, skipped: true };
   return sendMailSafe({
@@ -2101,6 +2218,17 @@ const server = createServer(async (req, res) => {
       const drafts = await listApplicantDraftsForAdmin({ year, processCode, search });
 
       return json(res, 200, { year, processCode, drafts });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/admin/application-reports') {
+      const adminUser = await requireSuperAdmin(req, res);
+      if (!adminUser) return;
+      const year = url.searchParams.get('year') || DEFAULT_YEAR;
+      const processCode = url.searchParams.get('processCode') || DEFAULT_PROCESS;
+      const search = url.searchParams.get('search') || '';
+      const reports = await listApplicationReportRows({ year, processCode, search });
+
+      return json(res, 200, { year, processCode, reports });
     }
 
     const adminMatch = url.pathname.match(/^\/api\/admin\/applications\/([^/]+)$/);

@@ -95,6 +95,12 @@ export const listAdminDrafts = ({ year = '2026', processCode = 'IIBMP', search =
   return request(`/api/admin/applicant-drafts?${params.toString()}`);
 };
 
+export const listAdminApplicationReports = ({ year = '2026', processCode = 'IIBMP', search = '' } = {}) => {
+  const params = new URLSearchParams({ year, processCode });
+  if (search) params.set('search', search);
+  return request(`/api/admin/application-reports?${params.toString()}`);
+};
+
 export const getAdminApplication = (registrationNo) => (
   request(`/api/admin/applications/${encodeURIComponent(registrationNo)}`)
 );
