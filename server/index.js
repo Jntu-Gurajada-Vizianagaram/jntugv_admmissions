@@ -1703,8 +1703,10 @@ const summarizeApplicationReportRow = (row) => ({
   activityDate: row.activityDate || row.activity_date || '',
 });
 
-const listApplicationReportRows = async ({ year = DEFAULT_YEAR, processCode = DEFAULT_PROCESS, search = '' } = {}) => {
+const listApplicationReportRows = async ({ year = '', processCode = '', search = '' } = {}) => {
   const normalizedSearch = String(search || '').trim().toLowerCase();
+  const normalizedYear = String(year || '').trim();
+  const normalizedProcessCode = String(processCode || '').trim();
   const db = await getDb();
   let rows;
 
@@ -1725,7 +1727,7 @@ const listApplicationReportRows = async ({ year = DEFAULT_YEAR, processCode = DE
         d.saved_at AS activity_date
       FROM applicant_drafts d
       LEFT JOIN applicant_accounts a ON a.id = d.applicant_id
-      WHERE d.year = ? AND d.process_code = ?
+      WHERE (? = '' OR d.year = ?) AND (? = '' OR d.process_code = ?)
 
       UNION ALL
 
@@ -1743,10 +1745,19 @@ const listApplicationReportRows = async ({ year = DEFAULT_YEAR, processCode = DE
         ap.status AS verification_status,
         ap.submitted_at AS activity_date
       FROM applications ap
-      WHERE ap.year = ? AND ap.process_code = ?
+      WHERE (? = '' OR ap.year = ?) AND (? = '' OR ap.process_code = ?)
 
       ORDER BY activity_date DESC
-    `, [year, processCode, year, processCode]);
+    `, [
+      normalizedYear,
+      normalizedYear,
+      normalizedProcessCode,
+      normalizedProcessCode,
+      normalizedYear,
+      normalizedYear,
+      normalizedProcessCode,
+      normalizedProcessCode,
+    ]);
 
     rows = result.map(row => summarizeApplicationReportRow({
       ...row,
@@ -1754,8 +1765,11 @@ const listApplicationReportRows = async ({ year = DEFAULT_YEAR, processCode = DE
     }));
   } else {
     const [drafts, applications] = await Promise.all([
-      listApplicantDraftsForAdmin({ year, processCode }),
-      loadApplications(year, processCode),
+      listApplicantDraftsForAdmin({
+        year: normalizedYear || DEFAULT_YEAR,
+        processCode: normalizedProcessCode || DEFAULT_PROCESS,
+      }),
+      loadApplications(normalizedYear || DEFAULT_YEAR, normalizedProcessCode || DEFAULT_PROCESS),
     ]);
 
     rows = [
@@ -1764,8 +1778,8 @@ const listApplicationReportRows = async ({ year = DEFAULT_YEAR, processCode = DE
         name: draft.candidateName,
         phoneNumber: draft.candidateMobile,
         email: draft.candidateEmail,
-        year,
-        processCode,
+        year: draft.year || normalizedYear || DEFAULT_YEAR,
+        processCode: draft.processCode || normalizedProcessCode || DEFAULT_PROCESS,
         programme: '',
         category: '',
         currentStep: draft.currentStep,
@@ -2223,8 +2237,8 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/admin/application-reports') {
       const adminUser = await requireSuperAdmin(req, res);
       if (!adminUser) return;
-      const year = url.searchParams.get('year') || DEFAULT_YEAR;
-      const processCode = url.searchParams.get('processCode') || DEFAULT_PROCESS;
+      const year = url.searchParams.get('year') || '';
+      const processCode = url.searchParams.get('processCode') || '';
       const search = url.searchParams.get('search') || '';
       const reports = await listApplicationReportRows({ year, processCode, search });
 

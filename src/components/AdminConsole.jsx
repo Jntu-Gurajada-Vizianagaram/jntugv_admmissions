@@ -337,9 +337,9 @@ export default function AdminConsole() {
 
   const dailyCounts = useMemo(() => ({
     total: dailyApplications.length,
-    submitted: dailyApplications.filter(record => record.status === 'Submitted').length,
-    underReview: dailyApplications.filter(record => ['Under Review', 'Under Review / Verification in Progress'].includes(record.status)).length,
-    verified: dailyApplications.filter(record => record.status === 'Verified').length,
+    submitted: dailyApplications.length,
+    underReview: dailyApplications.filter(record => ['Under Review', 'Under Review / Verification in Progress'].includes(record.verificationStatus)).length,
+    verified: dailyApplications.filter(record => record.verificationStatus === 'Verified').length,
     drafts: dailyDrafts.length,
   }), [dailyApplications, dailyDrafts]);
   const hasFilteredOutReportRows = Boolean(
@@ -685,8 +685,8 @@ export default function AdminConsole() {
         </section>
       )}
 
-      {activeSection === 'applications' && permittedSections.includes(activeSection) && <section className="admin-layout">
-        <aside className="admin-list-panel no-print">
+      {activeSection === 'applications' && permittedSections.includes(activeSection) && <section className={`admin-layout ${routeRegistrationNo ? 'review-route' : 'list-route'}`}>
+        {!routeRegistrationNo && <aside className="admin-list-panel no-print">
           <div className="admin-filters">
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, mobile, email, reg no" />
             <select value={status} onChange={(event) => setStatus(event.target.value)}>
@@ -730,14 +730,17 @@ export default function AdminConsole() {
               </tbody>
             </table>
           </div>
-        </aside>
+        </aside>}
 
-        <main className="admin-detail-panel">
+        {routeRegistrationNo && <main className="admin-detail-panel">
           {!selectedApplication && (
             <div className="admin-placeholder no-print">
               <FileSearch size={42} />
-              <h3>Select an application</h3>
-              <p>Open a submitted record to verify documents and print the college copy.</p>
+              <h3>{loading ? 'Opening application' : 'Application not opened'}</h3>
+              <p>{loading ? 'Loading the selected submitted application.' : 'Use the applications list to open a submitted record for verification.'}</p>
+              <button type="button" className="btn btn-outline" onClick={() => navigate('/admin/applications')}>
+                Back to Applications
+              </button>
             </div>
           )}
 
@@ -748,10 +751,15 @@ export default function AdminConsole() {
                   <h3>{selected.registrationNo}</h3>
                   <p>{selectedApplication.personal.name} | {selectedApplication.personal.mobile}</p>
                 </div>
-                <button type="button" className="btn btn-outline" onClick={printApplication}>
-                  <Printer size={17} />
-                  Print Application
-                </button>
+                <div className="admin-review-actions">
+                  <button type="button" className="btn btn-outline" onClick={() => navigate('/admin/applications')}>
+                    Back to Applications
+                  </button>
+                  <button type="button" className="btn btn-outline" onClick={printApplication}>
+                    <Printer size={17} />
+                    Print Application
+                  </button>
+                </div>
               </div>
 
               <div className="admin-verification no-print">
@@ -854,7 +862,7 @@ export default function AdminConsole() {
               />
             </>
           )}
-        </main>
+        </main>}
       </section>}
     </div>
   );

@@ -97,28 +97,34 @@ export const listAdminDrafts = ({ year = '2026', processCode = 'IIBMP', search =
   return request(`/api/admin/applicant-drafts?${params.toString()}`);
 };
 
-export const listAdminApplicationReports = async ({ year = '2026', processCode = 'IIBMP', search = '' } = {}) => {
-  const params = new URLSearchParams({ year, processCode });
+export const listAdminApplicationReports = async ({ year = '', processCode = '', search = '' } = {}) => {
+  const params = new URLSearchParams();
+  if (year) params.set('year', year);
+  if (processCode) params.set('processCode', processCode);
   if (search) params.set('search', search);
+  const query = params.toString();
+  const reportPath = query ? `/api/admin/application-reports?${query}` : '/api/admin/application-reports';
   try {
-    return await request(`/api/admin/application-reports?${params.toString()}`);
+    return await request(reportPath);
   } catch (error) {
     if (error.status !== 404) throw error;
+    const fallbackYear = year || '2026';
+    const fallbackProcessCode = processCode || 'IIBMP';
     const [applicationsResult, draftsResult] = await Promise.all([
-      listAdminApplications({ year, processCode, search }),
-      listAdminDrafts({ year, processCode, search }).catch(() => ({ drafts: [] })),
+      listAdminApplications({ year: fallbackYear, processCode: fallbackProcessCode, search }),
+      listAdminDrafts({ year: fallbackYear, processCode: fallbackProcessCode, search }).catch(() => ({ drafts: [] })),
     ]);
     return {
-      year,
-      processCode,
+      year: fallbackYear,
+      processCode: fallbackProcessCode,
       reports: [
         ...(draftsResult.drafts || []).map(draft => ({
           referenceNo: draft.applicantId,
           name: draft.candidateName || '',
           phoneNumber: draft.candidateMobile || '',
           email: draft.candidateEmail || '',
-          year,
-          processCode,
+          year: fallbackYear,
+          processCode: fallbackProcessCode,
           programme: '',
           category: '',
           currentStep: draft.currentStep ?? null,
@@ -131,8 +137,8 @@ export const listAdminApplicationReports = async ({ year = '2026', processCode =
           name: application.candidateName || '',
           phoneNumber: application.mobile || '',
           email: application.email || '',
-          year: application.year || year,
-          processCode: application.processCode || processCode,
+          year: application.year || fallbackYear,
+          processCode: application.processCode || fallbackProcessCode,
           programme: application.programme || '',
           category: application.category || '',
           currentStep: null,

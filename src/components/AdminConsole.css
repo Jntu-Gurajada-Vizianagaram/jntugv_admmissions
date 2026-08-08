@@ -503,6 +503,13 @@
   align-items: center;
 }
 
+.admin-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 .admin-review-card h3 {
   margin: 0;
   color: var(--primary-blue);
@@ -615,6 +622,11 @@
   .admin-layout {
     grid-template-columns: 1fr;
     align-items: start;
+  }
+
+  .admin-layout.review-route {
+    width: min(100%, 1480px);
+    margin: 0 auto;
   }
 
   .admin-verification {
