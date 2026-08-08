@@ -63,7 +63,7 @@ const reportDateTime = (value) => (
     : 'Not available'
 );
 const csvCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-const reviewPath = (registrationNo) => `/admin/applications#${encodeURIComponent(registrationNo)}`;
+const reviewPath = (registrationNo) => `/admin/applications/${encodeURIComponent(registrationNo)}`;
 
 export default function AdminConsole() {
   const location = useLocation();
@@ -102,7 +102,7 @@ export default function AdminConsole() {
   const departmentLogins = officers.filter(officer => ['co-convenor', 'officer'].includes(officer.role));
   const activeSection = location.pathname.split('/')[2] || 'dashboard';
   const routeRegistrationNo = activeSection === 'applications'
-    ? decodeURIComponent((location.hash || '').replace(/^#/, '') || location.pathname.split('/')[3] || '')
+    ? decodeURIComponent(location.pathname.split('/')[3] || '')
     : '';
   const isConvenor = adminUser?.role === 'admin';
   const permittedSections = isConvenor
