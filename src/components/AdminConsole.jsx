@@ -53,6 +53,15 @@ const reportDateKey = (value = new Date()) => new Intl.DateTimeFormat('en-CA', {
   month: '2-digit',
   day: '2-digit',
 }).format(new Date(value));
+const reportDateTime = (value) => (
+  value
+    ? new Date(value).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    })
+    : 'Not available'
+);
 const csvCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 
 export default function AdminConsole() {
@@ -71,7 +80,7 @@ export default function AdminConsole() {
   const [records, setRecords] = useState([]);
   const [reportRecords, setReportRecords] = useState([]);
   const [draftRecords, setDraftRecords] = useState([]);
-  const [reportDate, setReportDate] = useState(reportDateKey());
+  const [reportDate, setReportDate] = useState('');
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
@@ -301,12 +310,18 @@ export default function AdminConsole() {
   }), [records]);
 
   const dailyApplications = useMemo(() => (
-    reportRecords.filter(record => reportDateKey(record.submittedAt) === reportDate)
+    reportDate
+      ? reportRecords.filter(record => reportDateKey(record.submittedAt) === reportDate)
+      : reportRecords
   ), [reportDate, reportRecords]);
 
   const dailyDrafts = useMemo(() => (
-    draftRecords.filter(record => reportDateKey(record.savedAt) === reportDate)
+    reportDate
+      ? draftRecords.filter(record => reportDateKey(record.savedAt) === reportDate)
+      : draftRecords
   ), [draftRecords, reportDate]);
+
+  const reportScopeLabel = reportDate ? `for ${reportDate}` : 'for all dates';
 
   const dailyCounts = useMemo(() => ({
     total: dailyApplications.length,
@@ -346,7 +361,7 @@ export default function AdminConsole() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `JNTUGV-daily-applications-${reportDate}.csv`;
+    anchor.download = `JNTUGV-applications-${reportDate || 'all-dates'}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
   };
@@ -509,14 +524,19 @@ export default function AdminConsole() {
           <div className="daily-report-header">
             <div>
               <p className="page-kicker">Convenor Report</p>
-              <h3><BarChart3 size={21} /> Daily Received Applications</h3>
-              <p>Applications received on the selected date in India Standard Time.</p>
+              <h3><BarChart3 size={21} /> Application Reports</h3>
+              <p>Showing submitted and drafted applications {reportScopeLabel}. Select a date to filter the report.</p>
             </div>
             <div className="daily-report-actions no-print">
               <label>
-                Report Date
+                Filter by Date
                 <input type="date" value={reportDate} onChange={(event) => setReportDate(event.target.value)} />
               </label>
+              {reportDate && (
+                <button type="button" className="btn btn-outline" onClick={() => setReportDate('')}>
+                  All Dates
+                </button>
+              )}
               <button type="button" className="btn btn-outline" onClick={loadReportRecords}>
                 <RefreshCw size={17} /> Refresh
               </button>
@@ -539,7 +559,7 @@ export default function AdminConsole() {
           <div className="report-table-panel">
             <div className="report-subsection-title">
               <h4>Received Applications</h4>
-              <p>Submitted applications ready for assignment and verification.</p>
+              <p>{reportDate ? 'Filtered submitted applications ready for assignment and verification.' : 'All submitted applications ready for assignment and verification.'}</p>
             </div>
             <div className="daily-report-table-wrap">
               <table className="daily-report-table">
@@ -555,7 +575,7 @@ export default function AdminConsole() {
                       <td>{record.mobile || 'Not provided'}</td>
                       <td>{record.programme}</td>
                       <td><span className="admin-status-pill">{normalizeStatus(record.status)}</span></td>
-                      <td>{new Date(record.submittedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
+                      <td>{reportDateTime(record.submittedAt)}</td>
                       <td className="no-print">
                         <button type="button" className="admin-table-action" onClick={() => { navigate('/admin/applications'); openRecord(record.registrationNo); }}>
                           Review
@@ -564,7 +584,7 @@ export default function AdminConsole() {
                     </tr>
                   ))}
                   {!dailyApplications.length && (
-                    <tr><td colSpan="8" className="admin-empty">No submitted applications were received on this date.</td></tr>
+                    <tr><td colSpan="8" className="admin-empty">{reportDate ? 'No submitted applications were received on this date.' : 'No submitted applications found.'}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -574,7 +594,7 @@ export default function AdminConsole() {
           <div className="report-table-panel">
             <div className="report-subsection-title">
               <h4>Drafted Applications</h4>
-              <p>Applicant logins with saved progress that are not yet final submissions.</p>
+              <p>{reportDate ? 'Filtered applicant logins with saved progress.' : 'All applicant logins with saved progress that are not yet final submissions.'}</p>
             </div>
             <div className="daily-report-table-wrap">
               <table className="daily-report-table">
@@ -591,11 +611,11 @@ export default function AdminConsole() {
                       <td>{record.candidateEmail || 'Not provided'}</td>
                       <td>{record.programme}</td>
                       <td><span className="admin-status-pill draft">Step {record.currentStep}</span></td>
-                      <td>{record.savedAt ? new Date(record.savedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'Not saved'}</td>
+                      <td>{reportDateTime(record.savedAt)}</td>
                     </tr>
                   ))}
                   {!dailyDrafts.length && (
-                    <tr><td colSpan="8" className="admin-empty">No application drafts were saved on this date.</td></tr>
+                    <tr><td colSpan="8" className="admin-empty">{reportDate ? 'No application drafts were saved on this date.' : 'No application drafts found.'}</td></tr>
                   )}
                 </tbody>
               </table>
