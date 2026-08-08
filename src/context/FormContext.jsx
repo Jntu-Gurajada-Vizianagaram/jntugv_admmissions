@@ -299,7 +299,7 @@ export function FormProvider({ children }) {
     setIsSubmitting(true)
 
     try {
-      const result = await submitApplication(await createSubmissionPayload(data))
+      const result = await submitApplication(await createSubmissionPayload(data), applicantLogin)
       setRegNo(result.registrationNo)
       setSubmitted(true)
       await removeDraft().catch(() => {})

@@ -50,7 +50,8 @@ const emptyStageNotes = () => Object.fromEntries(STATUSES.map(status => [status,
 const normalizeStatus = (status = 'Submitted') => (
   status === 'Under Review' ? 'Under Review / Verification in Progress' : status
 );
-const canManageAdmissions = (user) => user?.role === 'admin';
+const canAssignApplications = (user) => user?.role === 'admin';
+const canManageDepartmentUsers = (user) => ['admin', 'co-convenor'].includes(user?.role);
 const roleLabel = (role) => ROLE_LABELS[role] || role;
 const reportDateKey = (value = new Date()) => new Intl.DateTimeFormat('en-CA', {
   timeZone: 'Asia/Kolkata',
@@ -69,6 +70,7 @@ const reportDateTime = (value) => (
 );
 const csvCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 const reviewPath = (registrationNo) => `/admin/applications/${encodeURIComponent(registrationNo)}`;
+const reviewStepPath = (registrationNo, step) => `${reviewPath(registrationNo)}/${step}`;
 const normalizedReportStatus = (record) => String(record.applicationStatus || '').trim().toLowerCase();
 const isSubmittedReport = (record) => normalizedReportStatus(record) === 'submitted';
 const isDraftReport = (record) => (
@@ -120,13 +122,22 @@ export default function AdminConsole() {
   const routeRegistrationNo = activeSection === 'applications'
     ? decodeURIComponent(location.pathname.split('/')[3] || '')
     : '';
+  const rawRouteReviewStep = activeSection === 'applications'
+    ? location.pathname.split('/')[4] || 'assignment'
+    : '';
   const isConvenor = adminUser?.role === 'admin';
+  const canManageUsers = canManageDepartmentUsers(adminUser);
+  const visibleDepartmentLogins = adminUser?.role === 'co-convenor'
+    ? officers.filter(officer => officer.role === 'officer')
+    : departmentLogins;
   const permittedSections = isConvenor
     ? ['dashboard', 'applications', 'reports', 'users']
-    : ['dashboard', 'applications'];
+    : canManageUsers
+      ? ['dashboard', 'applications', 'users']
+      : ['dashboard', 'applications'];
 
   const loadOfficers = useCallback(async () => {
-    if (!canManageAdmissions(adminUser)) return;
+    if (!canManageDepartmentUsers(adminUser)) return;
     const result = await listVerificationOfficers();
     setOfficers(result.officers || []);
   }, [adminUser]);
@@ -248,11 +259,11 @@ export default function AdminConsole() {
   }, [currentVerifierName]);
 
   const reviewRecord = useCallback((registrationNo) => {
-    navigate(reviewPath(registrationNo));
+    navigate(reviewStepPath(registrationNo, canAssignApplications(adminUser) ? 'assignment' : 'payment'));
     if (selected?.registrationNo !== registrationNo) {
       openRecord(registrationNo);
     }
-  }, [navigate, openRecord, selected?.registrationNo]);
+  }, [adminUser, navigate, openRecord, selected?.registrationNo]);
 
   const hasAssignment = Boolean(assignedOfficerId || selected?.assignedOfficerId);
   const hasVerificationRemarks = Boolean(verificationNotes.trim());
@@ -260,9 +271,13 @@ export default function AdminConsole() {
   const canEditReview = Boolean(isAssignedReviewer);
   const canFinalizeAdmission = Boolean(isConvenor && selected?.status === 'Verified');
   const reviewStatusSelectValue = REVIEW_STATUSES.includes(reviewStatus) ? reviewStatus : 'Verified';
+  const defaultReviewStep = canAssignApplications(adminUser) ? 'assignment' : 'payment';
+  const normalizedReviewStep = ['assignment', 'payment', 'verification', 'admission'].includes(rawRouteReviewStep)
+    ? rawRouteReviewStep
+    : defaultReviewStep;
 
   const saveAssignment = async () => {
-    if (!selected || !canManageAdmissions(adminUser)) return;
+    if (!selected || !canAssignApplications(adminUser)) return;
     if (!assignedOfficerId) {
       setError('Assign this application to the Convenor, Co-convenor, or a Verification Officer first.');
       return;
@@ -279,6 +294,7 @@ export default function AdminConsole() {
       setPaymentSaved(hasPaymentEntry(record.application?.payments));
       setReviewMessage('Application assignment saved. Payment details can now be entered.');
       await loadRecords();
+      navigate(reviewStepPath(selected.registrationNo, 'payment'));
     } catch (err) {
       setError(err.message || 'Unable to save assignment');
     } finally {
@@ -311,6 +327,7 @@ export default function AdminConsole() {
       setPaymentRows(normalizePaymentRows(record.application?.payments));
       setPaymentSaved(true);
       setReviewMessage('Payment details saved. Add remarks and save the verification status.');
+      navigate(reviewStepPath(selected.registrationNo, 'verification'));
     } catch (err) {
       setError(err.message || 'Unable to save payment details');
     } finally {
@@ -359,6 +376,9 @@ export default function AdminConsole() {
       setPaymentSaved(hasPaymentEntry(record.application?.payments));
       setReviewMessage('Verification status and remarks saved.');
       await loadRecords();
+      if (record.status === 'Verified' && isConvenor) {
+        navigate(reviewStepPath(selected.registrationNo, 'admission'));
+      }
     } catch (err) {
       setError(err.message || 'Unable to update verification');
     } finally {
@@ -426,12 +446,25 @@ export default function AdminConsole() {
     openRecord(routeRegistrationNo);
   }, [adminUser, openRecord, routeRegistrationNo, selected?.registrationNo]);
 
+  useEffect(() => {
+    if (!adminUser || !routeRegistrationNo) return;
+    if (!canAssignApplications(adminUser) && normalizedReviewStep === 'assignment') {
+      navigate(reviewStepPath(routeRegistrationNo, 'payment'), { replace: true });
+    }
+    if (!isConvenor && normalizedReviewStep === 'admission') {
+      navigate(reviewStepPath(routeRegistrationNo, 'verification'), { replace: true });
+    }
+  }, [adminUser, isConvenor, navigate, normalizedReviewStep, routeRegistrationNo]);
+
   const addOfficer = async (event) => {
     event.preventDefault();
     setError('');
     setOfficerMessage('');
     try {
-      const result = await createVerificationOfficer(officerForm);
+      const result = await createVerificationOfficer({
+        ...officerForm,
+        role: isConvenor ? officerForm.role : 'officer',
+      });
       setOfficerForm({ name: '', email: '', role: 'officer' });
       setOfficerMessage(result.credentialsSent
         ? result.message
@@ -443,6 +476,10 @@ export default function AdminConsole() {
   };
 
   const toggleOfficer = async (officer) => {
+    if (!isConvenor && officer.role !== 'officer') {
+      setError('Co-convenor accounts can manage Verification Officer logins only.');
+      return;
+    }
     await updateVerificationOfficer(officer.id, { active: !officer.active });
     await loadOfficers();
   };
@@ -646,7 +683,7 @@ export default function AdminConsole() {
         <NavLink to="/admin/dashboard"><LayoutDashboard size={18} /> Dashboard</NavLink>
         <NavLink to="/admin/applications"><ClipboardList size={18} /> Applications</NavLink>
         {isConvenor && <NavLink to="/admin/reports"><BarChart3 size={18} /> Reports</NavLink>}
-        {isConvenor && <NavLink to="/admin/users"><Users size={18} /> User Management</NavLink>}
+        {canManageUsers && <NavLink to="/admin/users"><Users size={18} /> User Management</NavLink>}
       </nav>
 
       {!permittedSections.includes(activeSection) && (
@@ -665,7 +702,7 @@ export default function AdminConsole() {
           {isConvenor && <button type="button" className="admin-action-card" onClick={() => navigate('/admin/reports')}>
             <BarChart3 size={28} /><span><strong>Daily Reports</strong><small>View, print or export date-wise application receipts.</small></span>
           </button>}
-          {isConvenor && <button type="button" className="admin-action-card" onClick={() => navigate('/admin/users')}>
+          {canManageUsers && <button type="button" className="admin-action-card" onClick={() => navigate('/admin/users')}>
             <Users size={28} /><span><strong>Manage Department Users</strong><small>Create accounts and control officer access.</small></span>
           </button>}
         </section>
@@ -784,18 +821,18 @@ export default function AdminConsole() {
         </section>
       )}
 
-      {isConvenor && activeSection === 'users' && (
+      {canManageUsers && activeSection === 'users' && (
         <section className="officer-console no-print">
           <div>
             <h3>Department Login Management</h3>
-            <p>Create Co-convenor and Verification Officer logins. The username and a secure temporary password are automatically emailed to the officer.</p>
+            <p>{isConvenor ? 'Create Co-convenor and Verification Officer logins. The username and a secure temporary password are automatically emailed to the user.' : 'Create Verification Officer logins. Co-convenor accounts cannot create or change other Co-convenor logins.'}</p>
           </div>
           <form className="officer-form" onSubmit={addOfficer}>
             <input required placeholder="Name" value={officerForm.name} onChange={(event) => setOfficerForm(prev => ({ ...prev, name: event.target.value }))} />
             <input required type="email" placeholder="Email address (used as username)" value={officerForm.email} onChange={(event) => setOfficerForm(prev => ({ ...prev, email: event.target.value }))} />
             <select value={officerForm.role} onChange={(event) => setOfficerForm(prev => ({ ...prev, role: event.target.value }))}>
               <option value="officer">Verification Officer</option>
-              <option value="co-convenor">Co-convenor</option>
+              {isConvenor && <option value="co-convenor">Co-convenor</option>}
             </select>
             <button type="submit" className="btn btn-accent">
               <UserPlus size={17} />
@@ -804,7 +841,7 @@ export default function AdminConsole() {
           </form>
           {officerMessage && <div className="status-success">{officerMessage}</div>}
           <div className="officer-list">
-            {departmentLogins.map(officer => (
+            {visibleDepartmentLogins.map(officer => (
               <div key={officer.id} className="officer-item">
                 <strong>{officer.name}</strong>
                 <span>{officer.username} | {roleLabel(officer.role)}</span>
@@ -897,14 +934,52 @@ export default function AdminConsole() {
               {error && <div className="status-error no-print">{error}</div>}
               {reviewMessage && <div className="status-success no-print">{reviewMessage}</div>}
 
-              <section className="admin-review-step no-print">
+              {normalizedReviewStep === 'admission' && !isConvenor && (
+                <section className="admin-access-denied no-print">
+                  <h3>Convenor access required</h3>
+                  <p>Final admission submission is available only to the Convenor after reviewer verification.</p>
+                  <button type="button" className="btn btn-primary" onClick={() => navigate(reviewStepPath(selected.registrationNo, 'verification'))}>
+                    Return to Verification
+                  </button>
+                </section>
+              )}
+
+              <nav className="admin-review-steps no-print" aria-label="Application review steps">
+                {canAssignApplications(adminUser) && <NavLink to={reviewStepPath(selected.registrationNo, 'assignment')}>1. Assignment</NavLink>}
+                <NavLink to={reviewStepPath(selected.registrationNo, 'payment')}>{isConvenor ? '2.' : '1.'} Payment</NavLink>
+                <NavLink to={reviewStepPath(selected.registrationNo, 'verification')}>{isConvenor ? '3.' : '2.'} Verification</NavLink>
+                {isConvenor && <NavLink to={reviewStepPath(selected.registrationNo, 'admission')}>4. Admission</NavLink>}
+              </nav>
+
+              <section className="admin-submitted-document">
+                <div className="admin-document-heading no-print">
+                  <p className="admin-step-kicker">Submitted Application</p>
+                  <h3>Application and Uploaded Document Details</h3>
+                  <p>{isConvenor ? 'Review the submitted application document before assigning it to a reviewer.' : 'Verify the submitted application and uploaded document details before entering payment and remarks.'}</p>
+                </div>
+                <PrintableApplication
+                  data={selectedApplication}
+                  regNo={selected.registrationNo}
+                  verification={{
+                    status: selected.status,
+                    submittedAt: selected.submittedAt,
+                    verifiedAt: selected.verifiedAt,
+                    verifiedBy: selected.verifiedBy,
+                    assignedOfficerName: selected.assignedOfficerName,
+                    verificationNotes: selected.verificationNotes,
+                    verificationStages: selected.verificationStages,
+                  }}
+                />
+              </section>
+
+              {normalizedReviewStep === 'assignment' && canAssignApplications(adminUser) && <section className="admin-review-step no-print">
                 <div>
                   <p className="admin-step-kicker">Step 1</p>
                   <h3>Assign Application</h3>
                   <p>The Convenor must assign the record before payment entry and verification review.</p>
                 </div>
                 <div className="admin-assignment-grid">
-                {canManageAdmissions(adminUser) && (
+                {canAssignApplications(adminUser) && (
                   <label>
                     Assigned To
                     <select value={assignedOfficerId} onChange={(event) => setAssignedOfficerId(event.target.value)}>
@@ -915,7 +990,7 @@ export default function AdminConsole() {
                     </select>
                   </label>
                 )}
-                {!canManageAdmissions(adminUser) && (
+                {!canAssignApplications(adminUser) && (
                   <label>
                     Assigned To
                     <input value={selected.assignedOfficerName || 'Not assigned to your account'} readOnly />
@@ -925,16 +1000,16 @@ export default function AdminConsole() {
                   Verified By
                   <input value={verifiedBy} onChange={(event) => setVerifiedBy(event.target.value)} placeholder="Officer name" disabled={!canEditReview} />
                 </label>
-                {canManageAdmissions(adminUser) && (
+                {canAssignApplications(adminUser) && (
                   <button type="button" className="btn btn-accent" onClick={saveAssignment} disabled={loading || !assignedOfficerId}>
                     <CheckCircle2 size={17} />
                     Save Assignment
                   </button>
                 )}
                 </div>
-              </section>
+              </section>}
 
-              <section className={`admin-payment-entry no-print ${!canEditReview ? 'locked' : ''}`}>
+              {normalizedReviewStep === 'payment' && <section className={`admin-payment-entry no-print ${!canEditReview ? 'locked' : ''}`}>
                 <div>
                   <p className="admin-step-kicker">Step 2</p>
                   <h3>Payment Details for Verified Print Sheet</h3>
@@ -974,9 +1049,9 @@ export default function AdminConsole() {
                     <CheckCircle2 size={17} /> Save Payment Details
                   </button>
                 </div>
-              </section>
+              </section>}
 
-              <div className="admin-verification no-print">
+              {normalizedReviewStep === 'verification' && <div className="admin-verification no-print">
                 <div className="admin-verification-heading">
                   <p className="admin-step-kicker">Step 3</p>
                   <h3>Verification Status</h3>
@@ -996,9 +1071,9 @@ export default function AdminConsole() {
                   <CheckCircle2 size={17} />
                   Save Verification
                 </button>
-              </div>
+              </div>}
 
-              {isConvenor && (
+              {isConvenor && normalizedReviewStep === 'admission' && (
                 <section className={`admin-final-admission no-print ${canFinalizeAdmission ? 'ready' : ''}`}>
                   <div>
                     <p className="admin-step-kicker">Step 4</p>
@@ -1012,7 +1087,7 @@ export default function AdminConsole() {
                 </section>
               )}
 
-              <section className="admin-stage-reviews no-print">
+              {normalizedReviewStep === 'verification' && <section className="admin-stage-reviews no-print">
                 <h3>{reviewStatus} Verification Review</h3>
                 <div className="admin-selected-stage-note">
                   <label className="active">
@@ -1025,21 +1100,8 @@ export default function AdminConsole() {
                     />
                   </label>
                 </div>
-              </section>
+              </section>}
 
-              <PrintableApplication
-                data={selectedApplication}
-                regNo={selected.registrationNo}
-                verification={{
-                  status: selected.status,
-                  submittedAt: selected.submittedAt,
-                  verifiedAt: selected.verifiedAt,
-                  verifiedBy: selected.verifiedBy,
-                  assignedOfficerName: selected.assignedOfficerName,
-                  verificationNotes: selected.verificationNotes,
-                  verificationStages: selected.verificationStages,
-                }}
-              />
             </>
           )}
         </main>}

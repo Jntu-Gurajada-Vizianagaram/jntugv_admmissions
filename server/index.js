@@ -155,6 +155,8 @@ const initializeDatabase = async () => {
       verified_by VARCHAR(190) NULL,
       verified_at DATETIME NULL,
       assigned_officer_id VARCHAR(80) NULL,
+      applicant_id VARCHAR(80) NULL,
+      applicant_username VARCHAR(40) NULL,
       application_json LONGTEXT NOT NULL,
       candidate_name VARCHAR(190) NULL,
       candidate_email VARCHAR(190) NULL,
@@ -164,9 +166,13 @@ const initializeDatabase = async () => {
       updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       INDEX idx_applications_year_process (year, process_code),
       INDEX idx_applications_status (status),
+      INDEX idx_applications_applicant (applicant_id, applicant_username),
       INDEX idx_applications_candidate (candidate_name, candidate_email, candidate_mobile)
     )
   `);
+  await db.query('ALTER TABLE applications ADD COLUMN applicant_id VARCHAR(80) NULL').catch(() => {});
+  await db.query('ALTER TABLE applications ADD COLUMN applicant_username VARCHAR(40) NULL').catch(() => {});
+  await db.query('CREATE INDEX idx_applications_applicant ON applications (applicant_id, applicant_username)').catch(() => {});
   await db.query(`
     CREATE TABLE IF NOT EXISTS application_payments (
       id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -207,13 +213,17 @@ const initializeDatabase = async () => {
       candidate_email VARCHAR(190) NOT NULL,
       candidate_mobile VARCHAR(40) NULL,
       candidate_name VARCHAR(190) NULL,
+      submitted_registration_no VARCHAR(80) NULL,
       salt VARCHAR(80) NOT NULL,
       password_hash VARCHAR(128) NOT NULL,
       created_at DATETIME NOT NULL,
       INDEX idx_applicant_email (candidate_email),
-      INDEX idx_applicant_mobile (candidate_mobile)
+      INDEX idx_applicant_mobile (candidate_mobile),
+      INDEX idx_applicant_submitted_registration (submitted_registration_no)
     )
   `);
+  await db.query('ALTER TABLE applicant_accounts ADD COLUMN submitted_registration_no VARCHAR(80) NULL').catch(() => {});
+  await db.query('CREATE INDEX idx_applicant_submitted_registration ON applicant_accounts (submitted_registration_no)').catch(() => {});
   await db.query(`
     CREATE TABLE IF NOT EXISTS applicant_drafts (
       applicant_id VARCHAR(80) NOT NULL PRIMARY KEY,
@@ -559,6 +569,8 @@ const normalizeLegacyRecord = (record) => {
     verificationStages: record.verificationStages || {},
     verifiedBy: record.verifiedBy || '',
     verifiedAt: record.verifiedAt || '',
+    applicantId: record.applicantId || record.applicant_id || '',
+    applicantUsername: record.applicantUsername || record.applicant_username || '',
     application: record.application || {},
   };
 };
@@ -755,6 +767,8 @@ const summarizeApplication = (record) => ({
   verifiedBy: record.verifiedBy || '',
   assignedOfficerId: record.assignedOfficerId || '',
   assignedOfficerName: record.assignedOfficerName || '',
+  applicantId: record.applicantId || '',
+  applicantUsername: record.applicantUsername || '',
 });
 
 const loadApplications = async (year = DEFAULT_YEAR, processCode = DEFAULT_PROCESS) => {
@@ -782,6 +796,8 @@ const loadApplications = async (year = DEFAULT_YEAR, processCode = DEFAULT_PROCE
       verifiedAt: toIsoString(row.verified_at),
       assignedOfficerId: row.assigned_officer_id || '',
       assignedOfficerName: row.assigned_officer_name || '',
+      applicantId: row.applicant_id || '',
+      applicantUsername: row.applicant_username || '',
       application: parseStoredJson(row.application_json, {}),
     }));
   }
@@ -795,6 +811,45 @@ const loadApplications = async (year = DEFAULT_YEAR, processCode = DEFAULT_PROCE
     ...record,
     assignedOfficerName: record.assignedOfficerName || officerNames.get(record.assignedOfficerId) || '',
   }));
+};
+
+const findSubmittedApplicationForApplicant = async (account, draft = null) => {
+  const year = draft?.year || DEFAULT_YEAR;
+  const processCode = draft?.processCode || DEFAULT_PROCESS;
+  const draftPersonal = draft?.data?.personal || {};
+  const email = String(account?.candidateEmail || draftPersonal.email || '').trim().toLowerCase();
+  const mobile = String(account?.candidateMobile || draftPersonal.mobile || '').trim();
+  const applicantId = String(account?.id || '').trim();
+  const applicantUsername = String(account?.username || '').trim().toLowerCase();
+  if (!applicantId && !applicantUsername && !email && !mobile) return null;
+
+  const records = await loadApplications(year, processCode);
+  if (account?.submittedRegistrationNo) {
+    const record = records.find(item => item.registrationNo === account.submittedRegistrationNo);
+    if (record) return record;
+  }
+
+  const matched = records
+    .filter(record => {
+      const personal = record.application?.personal || {};
+      const recordEmail = String(personal.email || '').trim().toLowerCase();
+      const recordMobile = String(personal.mobile || '').trim();
+      const recordApplicantId = String(record.applicantId || record.application?.applicant?.id || '').trim();
+      const recordApplicantUsername = String(record.applicantUsername || record.application?.applicant?.username || '').trim().toLowerCase();
+      return (applicantId && recordApplicantId === applicantId)
+        || (applicantUsername && recordApplicantUsername === applicantUsername)
+        || (email && recordEmail === email)
+        || (mobile && recordMobile === mobile);
+    })
+    .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+
+  return matched[0] || null;
+};
+
+const captureApplicantSubmission = async (account, registrationNo) => {
+  if (!account?.id || !registrationNo) return;
+  account.submittedRegistrationNo = registrationNo;
+  await saveApplicantAccount(account);
 };
 
 const saveApplications = async (records, year = DEFAULT_YEAR, processCode = DEFAULT_PROCESS) => {
@@ -857,8 +912,9 @@ const writeApplicationRecordToDb = async (db, record) => {
     INSERT INTO applications (
       registration_no, year, process_code, schema_version, status, submitted_at,
       verification_notes, verification_stages, verified_by, verified_at, assigned_officer_id,
+      applicant_id, applicant_username,
       application_json, candidate_name, candidate_email, candidate_mobile, category, programme
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       status = VALUES(status),
       verification_notes = VALUES(verification_notes),
@@ -866,6 +922,8 @@ const writeApplicationRecordToDb = async (db, record) => {
       verified_by = VALUES(verified_by),
       verified_at = VALUES(verified_at),
       assigned_officer_id = VALUES(assigned_officer_id),
+      applicant_id = VALUES(applicant_id),
+      applicant_username = VALUES(applicant_username),
       application_json = VALUES(application_json),
       candidate_name = VALUES(candidate_name),
       candidate_email = VALUES(candidate_email),
@@ -884,6 +942,8 @@ const writeApplicationRecordToDb = async (db, record) => {
     record.verifiedBy || '',
     toMysqlDateTime(record.verifiedAt),
     record.assignedOfficerId || null,
+    record.applicantId || null,
+    record.applicantUsername || null,
     JSON.stringify(record.application || {}),
     record.application?.personal?.name || '',
     record.application?.personal?.email || '',
@@ -908,7 +968,7 @@ const saveApplicationRecord = async (record) => {
   await writeApplicationRecordToDb(db, record);
 };
 
-const createSubmittedApplicationRecord = async ({ year, processCode, rawApplication }) => {
+const createSubmittedApplicationRecord = async ({ year, processCode, rawApplication, applicant = null }) => {
   const db = await getDb();
   if (!db) {
     const registrationNo = await createRegistrationNo(year, processCode);
@@ -930,6 +990,8 @@ const createSubmittedApplicationRecord = async ({ year, processCode, rawApplicat
       verificationStages: {},
       verifiedBy: '',
       verifiedAt: '',
+      applicantId: applicant?.id || rawApplication?.applicant?.id || '',
+      applicantUsername: applicant?.username || rawApplication?.applicant?.username || '',
       application,
     };
     await saveApplicationRecord(record);
@@ -955,6 +1017,8 @@ const createSubmittedApplicationRecord = async ({ year, processCode, rawApplicat
       verificationStages: {},
       verifiedBy: '',
       verifiedAt: '',
+      applicantId: applicant?.id || rawApplication?.applicant?.id || '',
+      applicantUsername: applicant?.username || rawApplication?.applicant?.username || '',
       application: rawApplication,
     };
     await writeApplicationRecordToDb(connection, record);
@@ -1406,6 +1470,7 @@ const publicApplicant = (account) => ({
   candidateEmail: account.candidateEmail,
   candidateMobile: account.candidateMobile,
   candidateName: account.candidateName,
+  submittedRegistrationNo: account.submittedRegistrationNo || '',
   createdAt: account.createdAt,
 });
 
@@ -1425,6 +1490,7 @@ const findApplicantByIdentity = async ({ email, mobile }) => {
       candidateEmail: row.candidate_email,
       candidateMobile: row.candidate_mobile || '',
       candidateName: row.candidate_name || '',
+      submittedRegistrationNo: row.submitted_registration_no || '',
       salt: row.salt,
       passwordHash: row.password_hash,
       createdAt: toIsoString(row.created_at),
@@ -1449,6 +1515,7 @@ const findApplicantByUsername = async (username) => {
       candidateEmail: row.candidate_email,
       candidateMobile: row.candidate_mobile || '',
       candidateName: row.candidate_name || '',
+      submittedRegistrationNo: row.submitted_registration_no || '',
       salt: row.salt,
       passwordHash: row.password_hash,
       createdAt: toIsoString(row.created_at),
@@ -1464,18 +1531,20 @@ const saveApplicantAccount = async (account) => {
   if (db) {
     await db.query(`
       INSERT INTO applicant_accounts (
-        id, username, candidate_email, candidate_mobile, candidate_name, salt, password_hash, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        id, username, candidate_email, candidate_mobile, candidate_name, submitted_registration_no, salt, password_hash, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         candidate_email = VALUES(candidate_email),
         candidate_mobile = VALUES(candidate_mobile),
-        candidate_name = VALUES(candidate_name)
+        candidate_name = VALUES(candidate_name),
+        submitted_registration_no = COALESCE(VALUES(submitted_registration_no), submitted_registration_no)
     `, [
       account.id,
       account.username,
       account.candidateEmail,
       account.candidateMobile,
       account.candidateName,
+      account.submittedRegistrationNo || null,
       account.salt,
       account.passwordHash,
       toMysqlDateTime(account.createdAt),
@@ -1522,20 +1591,22 @@ const ensureApplicantAccount = async ({ application, year, processCode }) => {
         candidateEmail: email,
         candidateMobile: mobile,
         candidateName,
+        submittedRegistrationNo: '',
         salt: hashed.salt,
         passwordHash: hashed.hash,
         createdAt: new Date().toISOString(),
       };
       await connection.query(`
         INSERT INTO applicant_accounts (
-          id, username, candidate_email, candidate_mobile, candidate_name, salt, password_hash, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          id, username, candidate_email, candidate_mobile, candidate_name, submitted_registration_no, salt, password_hash, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         account.id,
         account.username,
         account.candidateEmail,
         account.candidateMobile,
         account.candidateName,
+        account.submittedRegistrationNo || null,
         account.salt,
         account.passwordHash,
         toMysqlDateTime(account.createdAt),
@@ -2013,8 +2084,13 @@ const server = createServer(async (req, res) => {
         return json(res, 401, { message: 'Invalid applicant username or password' });
       }
       const draft = await loadApplicantDraft(account.id);
+      const submittedApplication = await findSubmittedApplicationForApplicant(account, draft);
+      if (submittedApplication && account.submittedRegistrationNo !== submittedApplication.registrationNo) {
+        await captureApplicantSubmission(account, submittedApplication.registrationNo);
+      }
       return json(res, 200, {
         applicant: publicApplicant(account),
+        submittedApplication: submittedApplication ? summarizeApplication(submittedApplication) : null,
         draft: draft || {
           data: {
             personal: {
@@ -2109,17 +2185,18 @@ const server = createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/admin/officers') {
-      const adminUser = req.method === 'GET'
-        ? await requireAdminUser(req, res)
-        : await requireSuperAdmin(req, res);
+      const adminUser = await requireAdminUser(req, res);
       if (!adminUser) return;
-      if (req.method === 'GET' && !['admin', 'co-convenor'].includes(adminUser.role)) {
+      if (!['admin', 'co-convenor'].includes(adminUser.role)) {
         return json(res, 403, { message: 'Convenor or Co-convenor access required' });
       }
       const users = await loadAdminUsers();
 
       if (req.method === 'GET') {
-        return json(res, 200, { officers: users.map(publicUser) });
+        const visibleUsers = adminUser.role === 'co-convenor'
+          ? users.filter(user => user.role === 'officer')
+          : users;
+        return json(res, 200, { officers: visibleUsers.map(publicUser) });
       }
 
       if (req.method === 'POST') {
@@ -2128,6 +2205,10 @@ const server = createServer(async (req, res) => {
         const name = String(body.name || '').trim();
         const allowedRoles = new Set(['co-convenor', 'officer']);
         const role = allowedRoles.has(body.role) ? body.role : 'officer';
+
+        if (adminUser.role === 'co-convenor' && role !== 'officer') {
+          return json(res, 403, { message: 'Co-convenor accounts can create Verification Officer logins only' });
+        }
 
         if (!name || !/^\S+@\S+\.\S+$/.test(email)) {
           return json(res, 400, { message: 'A valid name and email address are required' });
@@ -2165,8 +2246,11 @@ const server = createServer(async (req, res) => {
 
     const officerMatch = url.pathname.match(/^\/api\/admin\/officers\/([^/]+)$/);
     if (officerMatch && req.method === 'PATCH') {
-      const adminUser = await requireSuperAdmin(req, res);
+      const adminUser = await requireAdminUser(req, res);
       if (!adminUser) return;
+      if (!['admin', 'co-convenor'].includes(adminUser.role)) {
+        return json(res, 403, { message: 'Convenor or Co-convenor access required' });
+      }
       const body = await readBody(req);
       const users = await loadAdminUsers();
       const user = users.find(item => item.id === decodeURIComponent(officerMatch[1]));
@@ -2175,8 +2259,16 @@ const server = createServer(async (req, res) => {
         return json(res, 404, { message: 'Officer not found' });
       }
 
+      if (adminUser.role === 'co-convenor' && user.role !== 'officer') {
+        return json(res, 403, { message: 'Co-convenor accounts can manage Verification Officer logins only' });
+      }
+
       user.name = body.name ?? user.name;
-      user.role = ['admin', 'co-convenor', 'officer'].includes(body.role) ? body.role : user.role;
+      if (adminUser.role === 'admin') {
+        user.role = ['admin', 'co-convenor', 'officer'].includes(body.role) ? body.role : user.role;
+      } else {
+        user.role = 'officer';
+      }
       user.active = typeof body.active === 'boolean' ? body.active : user.active;
       if (body.password) {
         const hashed = hashPassword(String(body.password));
@@ -2197,11 +2289,32 @@ const server = createServer(async (req, res) => {
       const body = await readBody(req);
       const year = String(body.year || body.application?.admissionYear || DEFAULT_YEAR);
       const processCode = String(body.processCode || body.application?.processCode || DEFAULT_PROCESS);
+      const applicantPayload = body.applicant || {};
+      const applicant = applicantPayload.username
+        ? await findApplicantByUsername(String(applicantPayload.username))
+        : null;
+      const draft = applicant ? await loadApplicantDraft(applicant.id) : null;
+      const existingApplication = applicant ? await findSubmittedApplicationForApplicant(applicant, draft) : null;
+
+      if (existingApplication) {
+        await captureApplicantSubmission(applicant, existingApplication.registrationNo);
+        return json(res, 200, {
+          ...summarizeApplication(existingApplication),
+          message: 'Application already submitted. Showing existing application status.',
+        });
+      }
+
+      const linkedApplication = {
+        ...body.application,
+        applicant: applicant ? publicApplicant(applicant) : applicantPayload,
+      };
       const record = await createSubmittedApplicationRecord({
         year,
         processCode,
-        rawApplication: body.application,
+        rawApplication: linkedApplication,
+        applicant,
       });
+      await captureApplicantSubmission(applicant, record.registrationNo);
       await notifyApplicationSubmitted(record);
       return json(res, 201, summarizeApplication(record));
     }
@@ -2371,6 +2484,8 @@ const server = createServer(async (req, res) => {
 
       return json(res, 200, {
         ...summarizeApplication(record),
+        verificationNotes: record.verificationNotes || '',
+        verificationStages: record.verificationStages || {},
         application: record.application,
       });
     }

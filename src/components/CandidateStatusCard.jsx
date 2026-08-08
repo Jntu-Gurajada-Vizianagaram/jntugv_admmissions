@@ -5,7 +5,7 @@ import PrintableApplication from './PrintableApplication';
 import './CandidateStatusCard.css';
 
 const IN_PROGRESS_STATUS = 'Under Review / Verification in Progress';
-const FINAL_STATUSES = ['Verified', 'Needs Correction', 'Rejected'];
+const FINAL_STATUSES = ['Verified', 'Needs Correction', 'Rejected', 'Admitted Submitted'];
 
 const normalizeStatus = (status = 'Submitted') => (
   status === 'Under Review' ? IN_PROGRESS_STATUS : status

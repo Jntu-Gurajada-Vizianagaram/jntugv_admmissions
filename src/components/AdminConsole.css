@@ -512,6 +512,59 @@
   flex-wrap: wrap;
 }
 
+.admin-review-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.admin-review-steps a {
+  display: flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--text-muted);
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.admin-review-steps a:hover {
+  border-color: var(--accent-blue);
+  color: var(--primary-blue);
+}
+
+.admin-review-steps a.active {
+  border-color: var(--primary-blue);
+  background: var(--primary-blue);
+  color: white;
+}
+
+.admin-submitted-document {
+  margin-bottom: 1rem;
+}
+
+.admin-document-heading {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-bottom: 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: #f8fafc;
+}
+
+.admin-document-heading h3 {
+  margin: 0.2rem 0 0;
+  color: var(--primary-blue);
+}
+
+.admin-document-heading p {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+}
+
 .admin-review-card h3 {
   margin: 0;
   color: var(--primary-blue);

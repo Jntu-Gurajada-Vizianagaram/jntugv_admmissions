@@ -56,9 +56,9 @@ export const getAdminSession = () => {
   return request('/api/admin/session');
 };
 
-export const submitApplication = (application) => request('/api/applications', {
+export const submitApplication = (application, applicant = null) => request('/api/applications', {
   method: 'POST',
-  body: JSON.stringify({ year: '2026', processCode: 'IIBMP', application }),
+  body: JSON.stringify({ year: '2026', processCode: 'IIBMP', application, applicant }),
 });
 
 export const getApplicationStatus = (registrationNo) => (

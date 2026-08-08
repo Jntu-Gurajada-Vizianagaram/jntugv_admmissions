@@ -87,6 +87,15 @@ export default function CandidateLogin() {
 
     try {
       const result = await applicantLogin(applicantCredentials);
+      if (result.submittedApplication?.registrationNo) {
+        setApplication(result.submittedApplication);
+        navigate(`/status?reg=${encodeURIComponent(result.submittedApplication.registrationNo)}`, {
+          state: {
+            message: 'Your application has already been submitted. Current status is shown below.',
+          },
+        });
+        return;
+      }
       await restoreServerDraft(result.draft, result.applicant);
       navigate('/application-RUKF-IIBMP');
     } catch (err) {
