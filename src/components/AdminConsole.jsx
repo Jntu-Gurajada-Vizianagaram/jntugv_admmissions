@@ -64,6 +64,12 @@ const reportDateTime = (value) => (
 );
 const csvCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
 const reviewPath = (registrationNo) => `/admin/applications/${encodeURIComponent(registrationNo)}`;
+const normalizedReportStatus = (record) => String(record.applicationStatus || '').trim().toLowerCase();
+const isSubmittedReport = (record) => normalizedReportStatus(record) === 'submitted';
+const isDraftReport = (record) => (
+  ['under process', 'draft', 'drafted'].includes(normalizedReportStatus(record))
+  || (record.currentStep !== null && record.currentStep !== undefined && !isSubmittedReport(record))
+);
 
 export default function AdminConsole() {
   const location = useLocation();
@@ -323,14 +329,14 @@ export default function AdminConsole() {
 
   const dailyApplications = useMemo(() => (
     reportDate
-      ? reportRows.filter(record => record.applicationStatus === 'Submitted' && reportDateKey(record.activityDate) === reportDate)
-      : reportRows.filter(record => record.applicationStatus === 'Submitted')
+      ? reportRows.filter(record => isSubmittedReport(record) && reportDateKey(record.activityDate) === reportDate)
+      : reportRows.filter(isSubmittedReport)
   ), [reportDate, reportRows]);
 
   const dailyDrafts = useMemo(() => (
     reportDate
-      ? reportRows.filter(record => record.applicationStatus === 'Under Process' && reportDateKey(record.activityDate) === reportDate)
-      : reportRows.filter(record => record.applicationStatus === 'Under Process')
+      ? reportRows.filter(record => isDraftReport(record) && reportDateKey(record.activityDate) === reportDate)
+      : reportRows.filter(isDraftReport)
   ), [reportDate, reportRows]);
 
   const reportScopeLabel = reportDate ? `for ${reportDate}` : 'till date';
@@ -348,8 +354,8 @@ export default function AdminConsole() {
     && !dailyDrafts.length
     && reportRows.length,
   );
-  const allSubmittedReportCount = reportRows.filter(record => record.applicationStatus === 'Submitted').length;
-  const allDraftReportCount = reportRows.filter(record => record.applicationStatus === 'Under Process').length;
+  const allSubmittedReportCount = reportRows.filter(isSubmittedReport).length;
+  const allDraftReportCount = reportRows.filter(isDraftReport).length;
 
   const downloadDailyReport = () => {
     const header = ['Type', 'Registration / Login', 'Candidate', 'Mobile', 'Email', 'Programme', 'Status', 'Step', 'Date Time'];

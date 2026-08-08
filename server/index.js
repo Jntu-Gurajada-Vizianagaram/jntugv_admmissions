@@ -1618,6 +1618,8 @@ const summarizeApplicantDraft = (draft) => {
 
 const listApplicantDraftsForAdmin = async ({ year = DEFAULT_YEAR, processCode = DEFAULT_PROCESS, search = '' } = {}) => {
   const normalizedSearch = String(search || '').trim().toLowerCase();
+  const normalizedYear = String(year || '').trim();
+  const normalizedProcessCode = String(processCode || '').trim();
   const db = await getDb();
   let drafts;
 
@@ -1635,9 +1637,9 @@ const listApplicantDraftsForAdmin = async ({ year = DEFAULT_YEAR, processCode = 
         applicant_accounts.created_at
       FROM applicant_drafts
       INNER JOIN applicant_accounts ON applicant_accounts.id = applicant_drafts.applicant_id
-      WHERE applicant_drafts.year = ? AND applicant_drafts.process_code = ?
+      WHERE (? = '' OR applicant_drafts.year = ?) AND (? = '' OR applicant_drafts.process_code = ?)
       ORDER BY applicant_drafts.saved_at DESC
-    `, [year, processCode]);
+    `, [normalizedYear, normalizedYear, normalizedProcessCode, normalizedProcessCode]);
 
     drafts = rows.map(row => ({
       applicantId: row.applicant_id,
@@ -1657,7 +1659,7 @@ const listApplicantDraftsForAdmin = async ({ year = DEFAULT_YEAR, processCode = 
     ]);
     const accounts = new Map(accountRows.map(account => [account.id, account]));
     drafts = draftRows
-      .filter(draft => draft.year === year && draft.processCode === processCode)
+      .filter(draft => (!normalizedYear || draft.year === normalizedYear) && (!normalizedProcessCode || draft.processCode === normalizedProcessCode))
       .map(draft => {
         const account = accounts.get(draft.applicantId) || {};
         return {
@@ -1713,7 +1715,7 @@ const listApplicationReportRows = async ({ year = '', processCode = '', search =
   if (db) {
     const [result] = await db.query(`
       SELECT
-        d.applicant_id AS reference_no,
+        COALESCE(a.username, d.applicant_id) AS reference_no,
         a.candidate_name AS name,
         a.candidate_mobile AS phone_number,
         a.candidate_email AS email,
@@ -2226,8 +2228,8 @@ const server = createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/admin/applicant-drafts') {
       const adminUser = await requireSuperAdmin(req, res);
       if (!adminUser) return;
-      const year = url.searchParams.get('year') || DEFAULT_YEAR;
-      const processCode = url.searchParams.get('processCode') || DEFAULT_PROCESS;
+      const year = url.searchParams.get('year') || '';
+      const processCode = url.searchParams.get('processCode') || '';
       const search = url.searchParams.get('search') || '';
       const drafts = await listApplicantDraftsForAdmin({ year, processCode, search });
 

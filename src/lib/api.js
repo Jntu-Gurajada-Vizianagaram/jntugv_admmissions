@@ -92,9 +92,12 @@ export const listAdminApplications = ({ year = '2026', processCode = 'IIBMP', se
 };
 
 export const listAdminDrafts = ({ year = '2026', processCode = 'IIBMP', search = '' } = {}) => {
-  const params = new URLSearchParams({ year, processCode });
+  const params = new URLSearchParams();
+  if (year) params.set('year', year);
+  if (processCode) params.set('processCode', processCode);
   if (search) params.set('search', search);
-  return request(`/api/admin/applicant-drafts?${params.toString()}`);
+  const query = params.toString();
+  return request(query ? `/api/admin/applicant-drafts?${query}` : '/api/admin/applicant-drafts');
 };
 
 export const listAdminApplicationReports = async ({ year = '', processCode = '', search = '' } = {}) => {
@@ -112,14 +115,16 @@ export const listAdminApplicationReports = async ({ year = '', processCode = '',
     const fallbackProcessCode = processCode || 'IIBMP';
     const [applicationsResult, draftsResult] = await Promise.all([
       listAdminApplications({ year: fallbackYear, processCode: fallbackProcessCode, search }),
-      listAdminDrafts({ year: fallbackYear, processCode: fallbackProcessCode, search }).catch(() => ({ drafts: [] })),
+      listAdminDrafts({ year, processCode, search }).catch(() => (
+        listAdminDrafts({ year: fallbackYear, processCode: fallbackProcessCode, search }).catch(() => ({ drafts: [] }))
+      )),
     ]);
     return {
       year: fallbackYear,
       processCode: fallbackProcessCode,
       reports: [
         ...(draftsResult.drafts || []).map(draft => ({
-          referenceNo: draft.applicantId,
+          referenceNo: draft.username || draft.applicantId,
           name: draft.candidateName || '',
           phoneNumber: draft.candidateMobile || '',
           email: draft.candidateEmail || '',
