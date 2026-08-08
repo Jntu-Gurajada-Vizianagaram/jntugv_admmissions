@@ -184,12 +184,57 @@ jobs:
           rm -f /tmp/dist.tar.gz
 
           if command -v pm2 >/dev/null 2>&1; then
+            echo "Stopping deploy-user PM2 applications if present..."
             pm2 delete "$PM2_FRONTEND_APP_NAME" >/dev/null 2>&1 || true
             pm2 delete "$PM2_APP_NAME" >/dev/null 2>&1 || true
+
+            if sudo -n true >/dev/null 2>&1; then
+              echo "Stopping root-owned PM2 applications and stale Node processes if present..."
+              sudo -n env PATH="$PATH" pm2 delete "$PM2_FRONTEND_APP_NAME" >/dev/null 2>&1 || true
+              sudo -n env PATH="$PATH" pm2 delete "$PM2_APP_NAME" >/dev/null 2>&1 || true
+              sudo -n pkill -f "$DEPLOY_PATH/server/index.js" >/dev/null 2>&1 || true
+              sudo -n pkill -f "$DEPLOY_PATH/server/frontend.js" >/dev/null 2>&1 || true
+            else
+              echo "Passwordless sudo is not available for deploy user; only deploy-user PM2 apps can be stopped."
+            fi
+
+            for port in 5000 5175; do
+              for attempt in $(seq 1 10); do
+                if ! (command -v ss >/dev/null 2>&1 && ss -ltn "sport = :$port" | grep -q ":$port"); then
+                  break
+                fi
+                echo "Waiting for port $port to be released..."
+                sleep 1
+              done
+            done
+
+            busy_ports=""
+            for port in 5000 5175; do
+              if command -v ss >/dev/null 2>&1 && ss -ltn "sport = :$port" | grep -q ":$port"; then
+                busy_ports="$busy_ports $port"
+              fi
+            done
+
+            if [ -n "$busy_ports" ]; then
+              echo "Port(s)$busy_ports are still in use before PM2 start. A root-owned or external process is still running."
+              echo "Run on the server as root:"
+              echo "  pm2 delete $PM2_APP_NAME $PM2_FRONTEND_APP_NAME || true"
+              echo "  pkill -f '$DEPLOY_PATH/server/index.js' || true"
+              echo "  pkill -f '$DEPLOY_PATH/server/frontend.js' || true"
+              echo "  ss -ltnp 'sport = :5000'"
+              echo "  ss -ltnp 'sport = :5175'"
+              exit 1
+            fi
+
             pm2 start ecosystem.config.cjs --env production --update-env
             pm2 save
           elif command -v systemctl >/dev/null 2>&1 && systemctl list-unit-files "$SERVICE_NAME.service" --no-legend | grep -q "$SERVICE_NAME.service"; then
-            sudo systemctl restart "$SERVICE_NAME"
+            if sudo -n true >/dev/null 2>&1; then
+              sudo -n systemctl restart "$SERVICE_NAME"
+            else
+              echo "systemd service exists but deploy user cannot run passwordless sudo."
+              exit 1
+            fi
           else
             echo "Neither systemd service '$SERVICE_NAME' nor pm2 is available on the server."
             exit 1
@@ -214,6 +259,12 @@ jobs:
             pm2 list || true
             pm2 logs "$PM2_APP_NAME" --lines 80 --nostream || true
           fi
-          sudo systemctl status "$SERVICE_NAME" --no-pager || true
+          if command -v ss >/dev/null 2>&1; then
+            ss -ltnp 'sport = :5000' || true
+            ss -ltnp 'sport = :5175' || true
+          fi
+          if command -v systemctl >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+            sudo -n systemctl status "$SERVICE_NAME" --no-pager || true
+          fi
           exit 1
           REMOTE
