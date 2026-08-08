@@ -489,7 +489,8 @@
 }
 
 .admin-review-card,
-.admin-verification {
+.admin-verification,
+.admin-review-step {
   display: grid;
   gap: 1rem;
   padding: 1rem;
@@ -520,7 +521,34 @@
   color: var(--text-muted);
 }
 
-.admin-verification label {
+.admin-review-step h3,
+.admin-verification-heading h3 {
+  margin: 0;
+  color: var(--primary-blue);
+}
+
+.admin-review-step p,
+.admin-verification-heading p {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+}
+
+.admin-step-kicker {
+  margin: 0;
+  color: var(--accent-blue);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.admin-assignment-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-verification label,
+.admin-assignment-grid label {
   display: grid;
   gap: 0.35rem;
   color: var(--text-muted);
@@ -534,6 +562,10 @@
 .admin-notes textarea {
   min-height: 90px;
   resize: vertical;
+}
+
+.admin-verification-heading {
+  grid-column: 1 / -1;
 }
 
 .admin-documents,
@@ -631,6 +663,11 @@
 
   .admin-verification {
     grid-template-columns: 190px 220px 220px minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .admin-assignment-grid {
+    grid-template-columns: minmax(260px, 1fr) minmax(220px, 0.75fr) auto;
     align-items: end;
   }
 
@@ -741,9 +778,24 @@
   gap: 1rem;
 }
 
+.admin-payment-entry.locked {
+  background: #f8fafc;
+}
+
 .admin-payment-entry p {
   margin: 0.3rem 0 0;
   color: var(--text-muted);
+}
+
+.admin-locked-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.admin-locked-fieldset:disabled {
+  opacity: 0.62;
 }
 
 .admin-payment-table-wrap {

@@ -41,6 +41,9 @@ const normalizePaymentRows = (payments = []) => PAYMENT_ROW_DEFINITIONS.map((def
   status: '',
   ...(payments[index] || {}),
 }));
+const hasPaymentEntry = (payments = []) => payments.some(payment => (
+  payment.amount || payment.fee || payment.txn_ref || payment.txn_date || payment.mode || payment.status
+));
 const emptyStageNotes = () => Object.fromEntries(STATUSES.map(status => [status, '']));
 const normalizeStatus = (status = 'Submitted') => (
   status === 'Under Review' ? 'Under Review / Verification in Progress' : status
@@ -96,15 +99,20 @@ export default function AdminConsole() {
   const [verificationNotes, setVerificationNotes] = useState('');
   const [verificationStages, setVerificationStages] = useState(emptyStageNotes);
   const [paymentRows, setPaymentRows] = useState(() => normalizePaymentRows());
+  const [paymentSaved, setPaymentSaved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [officers, setOfficers] = useState([]);
   const [officerForm, setOfficerForm] = useState({ name: '', email: '', role: 'officer' });
   const [officerMessage, setOfficerMessage] = useState('');
+  const [reviewMessage, setReviewMessage] = useState('');
 
   const selectedApplication = selected?.application;
   const currentVerifierName = adminUser?.name || adminUser?.username || '';
-  const activeAssignees = officers.filter(officer => officer.active && ['co-convenor', 'officer'].includes(officer.role));
+  const activeAssignees = [
+    ...(adminUser?.role === 'admin' ? [adminUser] : []),
+    ...officers.filter(officer => officer.active && ['co-convenor', 'officer'].includes(officer.role)),
+  ];
   const departmentLogins = officers.filter(officer => ['co-convenor', 'officer'].includes(officer.role));
   const activeSection = location.pathname.split('/')[2] || 'dashboard';
   const routeRegistrationNo = activeSection === 'applications'
@@ -228,6 +236,8 @@ export default function AdminConsole() {
       setVerificationNotes(record.verificationNotes || '');
       setVerificationStages(normalizedStages);
       setPaymentRows(normalizePaymentRows(record.application?.payments));
+      setPaymentSaved(hasPaymentEntry(record.application?.payments));
+      setReviewMessage('');
     } catch (err) {
       setError(err.message || 'Unable to open application');
     } finally {
@@ -242,10 +252,85 @@ export default function AdminConsole() {
     }
   }, [navigate, openRecord, selected?.registrationNo]);
 
-  const saveVerification = async () => {
-    if (!selected) return;
+  const hasAssignment = Boolean(assignedOfficerId || selected?.assignedOfficerId);
+  const hasVerificationRemarks = Boolean(verificationNotes.trim());
+
+  const saveAssignment = async () => {
+    if (!selected || !canManageAdmissions(adminUser)) return;
+    if (!assignedOfficerId) {
+      setError('Assign this application to the Convenor, Co-convenor, or a Verification Officer first.');
+      return;
+    }
     setLoading(true);
     setError('');
+    setReviewMessage('');
+    try {
+      const record = await updateAdminApplication(selected.registrationNo, {
+        status: reviewStatus,
+        assignedOfficerId,
+        verifiedBy: verifiedBy.trim() || currentVerifierName,
+        verificationNotes,
+        verificationStages,
+        payments: paymentRows,
+      });
+      setSelected(record);
+      setAssignedOfficerId(record.assignedOfficerId || assignedOfficerId);
+      setPaymentSaved(hasPaymentEntry(record.application?.payments));
+      setReviewMessage('Application assignment saved. Payment details can now be entered.');
+      await loadRecords();
+    } catch (err) {
+      setError(err.message || 'Unable to save assignment');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const savePaymentDetails = async () => {
+    if (!selected) return;
+    if (!hasAssignment) {
+      setError('Save the application assignment before entering payment details.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setReviewMessage('');
+    try {
+      const record = await updateAdminApplication(selected.registrationNo, {
+        status: reviewStatus,
+        ...(canManageAdmissions(adminUser) ? { assignedOfficerId } : {}),
+        verifiedBy: verifiedBy.trim() || currentVerifierName,
+        verificationNotes,
+        verificationStages,
+        payments: paymentRows,
+      });
+      setSelected(record);
+      setPaymentRows(normalizePaymentRows(record.application?.payments));
+      setPaymentSaved(true);
+      setReviewMessage('Payment details saved. Add remarks and save the verification status.');
+    } catch (err) {
+      setError(err.message || 'Unable to save payment details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveVerification = async () => {
+    if (!selected) return;
+    if (!hasAssignment) {
+      setError('Save the application assignment before saving verification status.');
+      return;
+    }
+    if (!hasVerificationRemarks) {
+      setError('Verification remarks are required before saving the verification status.');
+      return;
+    }
+    if (!paymentSaved) {
+      setError('Save payment details before saving the verification status.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setReviewMessage('');
     try {
       const verifierName = verifiedBy.trim() || currentVerifierName;
       const record = await updateAdminApplication(selected.registrationNo, {
@@ -260,6 +345,7 @@ export default function AdminConsole() {
       setAssignedOfficerId(record.assignedOfficerId || '');
       setVerifiedBy(record.verifiedBy || verifierName);
       setPaymentRows(normalizePaymentRows(record.application?.payments));
+      setReviewMessage('Verification status and remarks saved.');
       await loadRecords();
     } catch (err) {
       setError(err.message || 'Unable to update verification');
@@ -768,76 +854,108 @@ export default function AdminConsole() {
                 </div>
               </div>
 
-              <div className="admin-verification no-print">
-                <label>
-                  Status
-                  <select value={reviewStatus} onChange={(event) => setReviewStatus(event.target.value)}>
-                    {STATUSES.map(item => <option key={item} value={item}>{item}</option>)}
-                  </select>
-                </label>
+              {reviewMessage && <div className="status-success no-print">{reviewMessage}</div>}
+
+              <section className="admin-review-step no-print">
+                <div>
+                  <p className="admin-step-kicker">Step 1</p>
+                  <h3>Assign Application</h3>
+                  <p>Assign the record before payment entry and verification status update.</p>
+                </div>
+                <div className="admin-assignment-grid">
                 {canManageAdmissions(adminUser) && (
                   <label>
                     Assigned To
                     <select value={assignedOfficerId} onChange={(event) => setAssignedOfficerId(event.target.value)}>
                       <option value="">Unassigned</option>
                       {activeAssignees.map(officer => (
-                        <option key={officer.id} value={officer.id}>{officer.name} ({roleLabel(officer.role)})</option>
+                        <option key={officer.id} value={officer.id}>{officer.name || officer.username} ({roleLabel(officer.role)})</option>
                       ))}
                     </select>
+                  </label>
+                )}
+                {!canManageAdmissions(adminUser) && (
+                  <label>
+                    Assigned To
+                    <input value={selected.assignedOfficerName || currentVerifierName || 'Assigned officer'} readOnly />
                   </label>
                 )}
                 <label>
                   Verified By
                   <input value={verifiedBy} onChange={(event) => setVerifiedBy(event.target.value)} placeholder="Officer name" />
                 </label>
-                <label className="admin-notes">
-                  Verification Notes
-                  <textarea value={verificationNotes} onChange={(event) => setVerificationNotes(event.target.value)} placeholder="Document remarks, corrections, counselling notes" />
-                </label>
-                <button type="button" className="btn btn-accent" onClick={saveVerification} disabled={loading}>
-                  <CheckCircle2 size={17} />
-                  Save Verification
-                </button>
-              </div>
+                {canManageAdmissions(adminUser) && (
+                  <button type="button" className="btn btn-accent" onClick={saveAssignment} disabled={loading || !assignedOfficerId}>
+                    <CheckCircle2 size={17} />
+                    Save Assignment
+                  </button>
+                )}
+                </div>
+              </section>
 
-              <section className="admin-payment-entry no-print">
+              <section className={`admin-payment-entry no-print ${!hasAssignment ? 'locked' : ''}`}>
                 <div>
+                  <p className="admin-step-kicker">Step 2</p>
                   <h3>Payment Details for Verified Print Sheet</h3>
-                  <p>Enter payment information received from the candidate. Saved values will appear in subsequent application printouts.</p>
+                  <p>{hasAssignment ? 'Enter payment information received from the candidate. Saved values will appear in subsequent application printouts.' : 'Save assignment first to unlock payment entry.'}</p>
                 </div>
-                <div className="admin-payment-table-wrap">
-                  <table className="admin-payment-table">
-                    <thead>
-                      <tr><th>Fee Type</th><th>Amount</th><th>Receipt / Reference No.</th><th>Payment Date</th><th>Mode</th><th>Status</th></tr>
-                    </thead>
-                    <tbody>
-                      {paymentRows.map((payment, index) => (
-                        <tr key={payment.title}>
-                          <td><strong>{payment.title}</strong></td>
-                          <td><input value={payment.amount || payment.fee || ''} onChange={(event) => setPaymentRows(prev => prev.map((row, rowIndex) => rowIndex === index ? { ...row, amount: event.target.value.replace(/[^\d.]/g, '') } : row))} placeholder="Amount" /></td>
-                          <td><input value={payment.txn_ref || ''} onChange={(event) => setPaymentRows(prev => prev.map((row, rowIndex) => rowIndex === index ? { ...row, txn_ref: event.target.value.toUpperCase() } : row))} placeholder="Reference number" /></td>
-                          <td><input type="date" value={payment.txn_date || ''} onChange={(event) => setPaymentRows(prev => prev.map((row, rowIndex) => rowIndex === index ? { ...row, txn_date: event.target.value } : row))} /></td>
-                          <td><input value={payment.mode || ''} onChange={(event) => setPaymentRows(prev => prev.map((row, rowIndex) => rowIndex === index ? { ...row, mode: event.target.value.toUpperCase() } : row))} placeholder="SBI Collect / Cash" /></td>
-                          <td>
-                            <select value={payment.status || ''} onChange={(event) => setPaymentRows(prev => prev.map((row, rowIndex) => rowIndex === index ? { ...row, status: event.target.value } : row))}>
-                              <option value="">Select</option>
-                              <option value="Received">Received</option>
-                              <option value="Verified">Verified</option>
-                              <option value="Pending">Pending</option>
-                            </select>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <fieldset className="admin-locked-fieldset" disabled={!hasAssignment || loading}>
+                  <div className="admin-payment-table-wrap">
+                    <table className="admin-payment-table">
+                      <thead>
+                        <tr><th>Fee Type</th><th>Amount</th><th>Receipt / Reference No.</th><th>Payment Date</th><th>Mode</th><th>Status</th></tr>
+                      </thead>
+                      <tbody>
+                        {paymentRows.map((payment, index) => (
+                          <tr key={payment.title}>
+                            <td><strong>{payment.title}</strong></td>
+                            <td><input value={payment.amount || payment.fee || ''} onChange={(event) => { setPaymentSaved(false); setPaymentRows(prev => prev.map((row, rowIndex) => rowIndex === index ? { ...row, amount: event.target.value.replace(/[^\d.]/g, '') } : row)); }} placeholder="Amount" /></td>
+                            <td><input value={payment.txn_ref || ''} onChange={(event) => { setPaymentSaved(false); setPaymentRows(prev => prev.map((row, rowIndex) => rowIndex === index ? { ...row, txn_ref: event.target.value.toUpperCase() } : row)); }} placeholder="Reference number" /></td>
+                            <td><input type="date" value={payment.txn_date || ''} onChange={(event) => { setPaymentSaved(false); setPaymentRows(prev => prev.map((row, rowIndex) => rowIndex === index ? { ...row, txn_date: event.target.value } : row)); }} /></td>
+                            <td><input value={payment.mode || ''} onChange={(event) => { setPaymentSaved(false); setPaymentRows(prev => prev.map((row, rowIndex) => rowIndex === index ? { ...row, mode: event.target.value.toUpperCase() } : row)); }} placeholder="SBI Collect / Cash" /></td>
+                            <td>
+                              <select value={payment.status || ''} onChange={(event) => { setPaymentSaved(false); setPaymentRows(prev => prev.map((row, rowIndex) => rowIndex === index ? { ...row, status: event.target.value } : row)); }}>
+                                <option value="">Select</option>
+                                <option value="Received">Received</option>
+                                <option value="Verified">Verified</option>
+                                <option value="Pending">Pending</option>
+                              </select>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </fieldset>
                 <div className="admin-payment-save-row">
                   <p className="admin-payment-save-note">Payment details are stored with the verification record.</p>
-                  <button type="button" className="btn btn-accent" onClick={saveVerification} disabled={loading}>
+                  <button type="button" className="btn btn-accent" onClick={savePaymentDetails} disabled={loading || !hasAssignment}>
                     <CheckCircle2 size={17} /> Save Payment Details
                   </button>
                 </div>
               </section>
+
+              <div className="admin-verification no-print">
+                <div className="admin-verification-heading">
+                  <p className="admin-step-kicker">Step 3</p>
+                  <h3>Verification Status</h3>
+                  <p>Save assignment and payment details first, then choose the status and add compulsory remarks.</p>
+                </div>
+                <label>
+                  Status
+                  <select value={reviewStatus} onChange={(event) => setReviewStatus(event.target.value)} disabled={!hasAssignment}>
+                    {STATUSES.map(item => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                </label>
+                <label className="admin-notes">
+                  Verification Remarks *
+                  <textarea value={verificationNotes} onChange={(event) => setVerificationNotes(event.target.value)} placeholder="Document remarks, corrections, counselling notes" disabled={!hasAssignment} />
+                </label>
+                <button type="button" className="btn btn-accent" onClick={saveVerification} disabled={loading || !hasAssignment || !paymentSaved || !hasVerificationRemarks}>
+                  <CheckCircle2 size={17} />
+                  Save Verification
+                </button>
+              </div>
 
               <section className="admin-stage-reviews no-print">
                 <h3>{reviewStatus} Verification Review</h3>
