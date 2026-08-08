@@ -132,6 +132,7 @@ export default function AdminConsole() {
   const loadReportRecords = useCallback(async () => {
     if (adminUser?.role !== 'admin') return;
     try {
+      setError('');
       const result = await listAdminApplicationReports();
       setReportRows(result.reports || []);
     } catch (err) {

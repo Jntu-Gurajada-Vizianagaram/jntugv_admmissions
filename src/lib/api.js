@@ -18,7 +18,9 @@ const request = async (path, options = {}) => {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.message || 'Request failed');
+    const error = new Error(payload.message || 'Request failed');
+    error.status = response.status;
+    throw error;
   }
 
   return payload;
@@ -95,10 +97,52 @@ export const listAdminDrafts = ({ year = '2026', processCode = 'IIBMP', search =
   return request(`/api/admin/applicant-drafts?${params.toString()}`);
 };
 
-export const listAdminApplicationReports = ({ year = '2026', processCode = 'IIBMP', search = '' } = {}) => {
+export const listAdminApplicationReports = async ({ year = '2026', processCode = 'IIBMP', search = '' } = {}) => {
   const params = new URLSearchParams({ year, processCode });
   if (search) params.set('search', search);
-  return request(`/api/admin/application-reports?${params.toString()}`);
+  try {
+    return await request(`/api/admin/application-reports?${params.toString()}`);
+  } catch (error) {
+    if (error.status !== 404) throw error;
+    const [applicationsResult, draftsResult] = await Promise.all([
+      listAdminApplications({ year, processCode, search }),
+      listAdminDrafts({ year, processCode, search }).catch(() => ({ drafts: [] })),
+    ]);
+    return {
+      year,
+      processCode,
+      reports: [
+        ...(draftsResult.drafts || []).map(draft => ({
+          referenceNo: draft.applicantId,
+          name: draft.candidateName || '',
+          phoneNumber: draft.candidateMobile || '',
+          email: draft.candidateEmail || '',
+          year,
+          processCode,
+          programme: '',
+          category: '',
+          currentStep: draft.currentStep ?? null,
+          applicationStatus: 'Under Process',
+          verificationStatus: '',
+          activityDate: draft.savedAt || '',
+        })),
+        ...(applicationsResult.applications || []).map(application => ({
+          referenceNo: application.registrationNo,
+          name: application.candidateName || '',
+          phoneNumber: application.mobile || '',
+          email: application.email || '',
+          year: application.year || year,
+          processCode: application.processCode || processCode,
+          programme: application.programme || '',
+          category: application.category || '',
+          currentStep: null,
+          applicationStatus: 'Submitted',
+          verificationStatus: application.status || '',
+          activityDate: application.submittedAt || '',
+        })),
+      ].sort((a, b) => new Date(b.activityDate) - new Date(a.activityDate)),
+    };
+  }
 };
 
 export const getAdminApplication = (registrationNo) => (
