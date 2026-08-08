@@ -364,7 +364,7 @@ const defaultAdminUsers = () => {
   return [{
     id: 'admin',
     username: process.env.ADMIN_USERNAME || 'admin',
-    name: process.env.ADMIN_NAME || 'Admissions Administrator',
+    name: process.env.ADMIN_NAME || '',
     role: 'admin',
     active: true,
     salt: password.salt,
@@ -1600,6 +1600,94 @@ const loadApplicantDraft = async (accountId) => {
   return draft ? { data: draft.data, currentStep: draft.currentStep, savedAt: draft.savedAt } : null;
 };
 
+const summarizeApplicantDraft = (draft) => {
+  const data = draft.data || {};
+  return {
+    applicantId: draft.applicantId,
+    username: draft.username || '',
+    candidateName: draft.candidateName || data.personal?.name || '',
+    candidateEmail: draft.candidateEmail || data.personal?.email || '',
+    candidateMobile: draft.candidateMobile || data.personal?.mobile || '',
+    programme: data.programme?.applied || 'RUKF-IIBMP',
+    currentStep: Number(draft.currentStep) || 1,
+    savedAt: draft.savedAt || '',
+    createdAt: draft.createdAt || '',
+    status: 'Draft',
+  };
+};
+
+const listApplicantDraftsForAdmin = async ({ year = DEFAULT_YEAR, processCode = DEFAULT_PROCESS, search = '' } = {}) => {
+  const normalizedSearch = String(search || '').trim().toLowerCase();
+  const db = await getDb();
+  let drafts;
+
+  if (db) {
+    const [rows] = await db.query(`
+      SELECT
+        applicant_drafts.applicant_id,
+        applicant_drafts.current_step,
+        applicant_drafts.draft_json,
+        applicant_drafts.saved_at,
+        applicant_accounts.username,
+        applicant_accounts.candidate_email,
+        applicant_accounts.candidate_mobile,
+        applicant_accounts.candidate_name,
+        applicant_accounts.created_at
+      FROM applicant_drafts
+      INNER JOIN applicant_accounts ON applicant_accounts.id = applicant_drafts.applicant_id
+      WHERE applicant_drafts.year = ? AND applicant_drafts.process_code = ?
+      ORDER BY applicant_drafts.saved_at DESC
+    `, [year, processCode]);
+
+    drafts = rows.map(row => ({
+      applicantId: row.applicant_id,
+      username: row.username || '',
+      candidateEmail: row.candidate_email || '',
+      candidateMobile: row.candidate_mobile || '',
+      candidateName: row.candidate_name || '',
+      currentStep: row.current_step,
+      data: parseStoredJson(row.draft_json, {}),
+      savedAt: toIsoString(row.saved_at),
+      createdAt: toIsoString(row.created_at),
+    }));
+  } else {
+    const [draftRows, accountRows] = await Promise.all([
+      readJson(APPLICANT_DRAFTS_FILE, []),
+      readJson(APPLICANT_ACCOUNTS_FILE, []),
+    ]);
+    const accounts = new Map(accountRows.map(account => [account.id, account]));
+    drafts = draftRows
+      .filter(draft => draft.year === year && draft.processCode === processCode)
+      .map(draft => {
+        const account = accounts.get(draft.applicantId) || {};
+        return {
+          applicantId: draft.applicantId,
+          username: account.username || '',
+          candidateEmail: account.candidateEmail || '',
+          candidateMobile: account.candidateMobile || '',
+          candidateName: account.candidateName || '',
+          currentStep: draft.currentStep,
+          data: draft.data || {},
+          savedAt: draft.savedAt || '',
+          createdAt: account.createdAt || '',
+        };
+      })
+      .sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+  }
+
+  return drafts
+    .map(summarizeApplicantDraft)
+    .filter(draft => {
+      if (!normalizedSearch) return true;
+      return [
+        draft.username,
+        draft.candidateName,
+        draft.candidateEmail,
+        draft.candidateMobile,
+      ].some(value => String(value || '').toLowerCase().includes(normalizedSearch));
+    });
+};
+
 const notifyApplicantCredentials = async ({ account, password }) => {
   if (!password) return { sent: false, skipped: true };
   return sendMailSafe({
@@ -2002,6 +2090,17 @@ const server = createServer(async (req, res) => {
         .map(summarizeApplication);
 
       return json(res, 200, { year, processCode, applications: filtered });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/admin/applicant-drafts') {
+      const adminUser = await requireSuperAdmin(req, res);
+      if (!adminUser) return;
+      const year = url.searchParams.get('year') || DEFAULT_YEAR;
+      const processCode = url.searchParams.get('processCode') || DEFAULT_PROCESS;
+      const search = url.searchParams.get('search') || '';
+      const drafts = await listApplicantDraftsForAdmin({ year, processCode, search });
+
+      return json(res, 200, { year, processCode, drafts });
     }
 
     const adminMatch = url.pathname.match(/^\/api\/admin\/applications\/([^/]+)$/);

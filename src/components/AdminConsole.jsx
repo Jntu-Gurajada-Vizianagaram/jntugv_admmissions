@@ -10,6 +10,7 @@ import {
   getAdminApplication,
   getAdminSession,
   listAdminApplications,
+  listAdminDrafts,
   listVerificationOfficers,
   requestAdminPasswordReset,
   updateAdminApplication,
@@ -69,6 +70,7 @@ export default function AdminConsole() {
   const [newPasswordForm, setNewPasswordForm] = useState({ password: '', confirmPassword: '' });
   const [records, setRecords] = useState([]);
   const [reportRecords, setReportRecords] = useState([]);
+  const [draftRecords, setDraftRecords] = useState([]);
   const [reportDate, setReportDate] = useState(reportDateKey());
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
@@ -118,8 +120,12 @@ export default function AdminConsole() {
   const loadReportRecords = useCallback(async () => {
     if (adminUser?.role !== 'admin') return;
     try {
-      const result = await listAdminApplications();
-      setReportRecords(result.applications || []);
+      const [applicationsResult, draftsResult] = await Promise.all([
+        listAdminApplications(),
+        listAdminDrafts(),
+      ]);
+      setReportRecords(applicationsResult.applications || []);
+      setDraftRecords(draftsResult.drafts || []);
     } catch (err) {
       setError(err.message || 'Unable to load daily applications report');
     }
@@ -184,6 +190,7 @@ export default function AdminConsole() {
     setSelected(null);
     setRecords([]);
     setReportRecords([]);
+    setDraftRecords([]);
     navigate('/admin', { replace: true });
   };
 
@@ -297,26 +304,44 @@ export default function AdminConsole() {
     reportRecords.filter(record => reportDateKey(record.submittedAt) === reportDate)
   ), [reportDate, reportRecords]);
 
+  const dailyDrafts = useMemo(() => (
+    draftRecords.filter(record => reportDateKey(record.savedAt) === reportDate)
+  ), [draftRecords, reportDate]);
+
   const dailyCounts = useMemo(() => ({
     total: dailyApplications.length,
     submitted: dailyApplications.filter(record => record.status === 'Submitted').length,
     underReview: dailyApplications.filter(record => ['Under Review', 'Under Review / Verification in Progress'].includes(record.status)).length,
     verified: dailyApplications.filter(record => record.status === 'Verified').length,
-  }), [dailyApplications]);
+    drafts: dailyDrafts.length,
+  }), [dailyApplications, dailyDrafts]);
 
   const downloadDailyReport = () => {
-    const header = ['Registration Number', 'Candidate', 'Mobile', 'Email', 'Programme', 'Status', 'Submitted At'];
-    const rows = dailyApplications.map(record => [
+    const header = ['Type', 'Registration / Login', 'Candidate', 'Mobile', 'Email', 'Programme', 'Status', 'Step', 'Date Time'];
+    const submittedRows = dailyApplications.map(record => [
+      'Submitted',
       record.registrationNo,
       record.candidateName,
       record.mobile,
       record.email,
       record.programme,
       record.status,
+      '',
       record.submittedAt,
     ]);
+    const draftRows = dailyDrafts.map(record => [
+      'Draft',
+      record.username,
+      record.candidateName,
+      record.candidateMobile,
+      record.candidateEmail,
+      record.programme,
+      record.status,
+      record.currentStep,
+      record.savedAt,
+    ]);
     const blob = new Blob([
-      [header, ...rows].map(row => row.map(csvCell).join(',')).join('\r\n'),
+      [header, ...submittedRows, ...draftRows].map(row => row.map(csvCell).join(',')).join('\r\n'),
     ], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -495,44 +520,86 @@ export default function AdminConsole() {
               <button type="button" className="btn btn-outline" onClick={loadReportRecords}>
                 <RefreshCw size={17} /> Refresh
               </button>
-              <button type="button" className="btn btn-outline" onClick={downloadDailyReport} disabled={!dailyApplications.length}>
+              <button type="button" className="btn btn-outline" onClick={downloadDailyReport} disabled={!dailyApplications.length && !dailyDrafts.length}>
                 <Download size={17} /> CSV
               </button>
-              <button type="button" className="btn btn-primary" onClick={printDailyReport} disabled={!dailyApplications.length}>
+              <button type="button" className="btn btn-primary" onClick={printDailyReport} disabled={!dailyApplications.length && !dailyDrafts.length}>
                 <Printer size={17} /> Print Report
               </button>
             </div>
           </div>
 
           <div className="daily-report-summary">
-            <span><strong>{dailyCounts.total}</strong>Total Received</span>
-            <span><strong>{dailyCounts.submitted}</strong>Submitted</span>
+            <span><strong>{dailyCounts.total}</strong>Received</span>
+            <span><strong>{dailyCounts.drafts}</strong>Drafted</span>
             <span><strong>{dailyCounts.underReview}</strong>Under Review</span>
             <span><strong>{dailyCounts.verified}</strong>Verified</span>
           </div>
 
-          <div className="daily-report-table-wrap">
-            <table className="daily-report-table">
-              <thead>
-                <tr><th>S.No</th><th>Registration No.</th><th>Candidate</th><th>Mobile</th><th>Programme</th><th>Status</th><th>Received Time</th></tr>
-              </thead>
-              <tbody>
-                {dailyApplications.map((record, index) => (
-                  <tr key={record.registrationNo}>
-                    <td>{index + 1}</td>
-                    <td>{record.registrationNo}</td>
-                    <td>{record.candidateName || 'Not provided'}</td>
-                    <td>{record.mobile || 'Not provided'}</td>
-                    <td>{record.programme}</td>
-                    <td>{normalizeStatus(record.status)}</td>
-                    <td>{new Date(record.submittedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
-                  </tr>
-                ))}
-                {!dailyApplications.length && (
-                  <tr><td colSpan="7" className="admin-empty">No applications were received on this date.</td></tr>
-                )}
-              </tbody>
-            </table>
+          <div className="report-table-panel">
+            <div className="report-subsection-title">
+              <h4>Received Applications</h4>
+              <p>Submitted applications ready for assignment and verification.</p>
+            </div>
+            <div className="daily-report-table-wrap">
+              <table className="daily-report-table">
+                <thead>
+                  <tr><th>S.No</th><th>Registration No.</th><th>Candidate</th><th>Mobile</th><th>Programme</th><th>Status</th><th>Received Time</th><th className="no-print">Action</th></tr>
+                </thead>
+                <tbody>
+                  {dailyApplications.map((record, index) => (
+                    <tr key={record.registrationNo}>
+                      <td>{index + 1}</td>
+                      <td>{record.registrationNo}</td>
+                      <td>{record.candidateName || 'Not provided'}</td>
+                      <td>{record.mobile || 'Not provided'}</td>
+                      <td>{record.programme}</td>
+                      <td><span className="admin-status-pill">{normalizeStatus(record.status)}</span></td>
+                      <td>{new Date(record.submittedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
+                      <td className="no-print">
+                        <button type="button" className="admin-table-action" onClick={() => { navigate('/admin/applications'); openRecord(record.registrationNo); }}>
+                          Review
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {!dailyApplications.length && (
+                    <tr><td colSpan="8" className="admin-empty">No submitted applications were received on this date.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="report-table-panel">
+            <div className="report-subsection-title">
+              <h4>Drafted Applications</h4>
+              <p>Applicant logins with saved progress that are not yet final submissions.</p>
+            </div>
+            <div className="daily-report-table-wrap">
+              <table className="daily-report-table">
+                <thead>
+                  <tr><th>S.No</th><th>Applicant Login</th><th>Candidate</th><th>Mobile</th><th>Email</th><th>Programme</th><th>Step</th><th>Saved Time</th></tr>
+                </thead>
+                <tbody>
+                  {dailyDrafts.map((record, index) => (
+                    <tr key={record.applicantId}>
+                      <td>{index + 1}</td>
+                      <td>{record.username || 'Not issued'}</td>
+                      <td>{record.candidateName || 'Not provided'}</td>
+                      <td>{record.candidateMobile || 'Not provided'}</td>
+                      <td>{record.candidateEmail || 'Not provided'}</td>
+                      <td>{record.programme}</td>
+                      <td><span className="admin-status-pill draft">Step {record.currentStep}</span></td>
+                      <td>{record.savedAt ? new Date(record.savedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'Not saved'}</td>
+                    </tr>
+                  ))}
+                  {!dailyDrafts.length && (
+                    <tr><td colSpan="8" className="admin-empty">No application drafts were saved on this date.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
       )}
@@ -586,20 +653,32 @@ export default function AdminConsole() {
 
           {error && <div className="status-error">{error}</div>}
 
-          <div className="admin-record-list">
-            {records.map(record => (
-              <button
-                type="button"
-                key={record.registrationNo}
-                className={`admin-record ${selected?.registrationNo === record.registrationNo ? 'active' : ''}`}
-                onClick={() => openRecord(record.registrationNo)}
-              >
-                <span>{record.registrationNo}</span>
-                <strong>{record.candidateName || 'Unnamed Candidate'}</strong>
-                <small>{record.status} | {record.assignedOfficerName || 'Unassigned'} | {record.mobile || 'No mobile'}</small>
-              </button>
-            ))}
-            {!records.length && !loading && <div className="admin-empty">No applications found.</div>}
+          <div className="admin-review-table-wrap">
+            <table className="admin-review-table">
+              <thead>
+                <tr><th>Registration No.</th><th>Candidate</th><th>Mobile</th><th>Status</th><th>Assigned</th><th>Action</th></tr>
+              </thead>
+              <tbody>
+                {records.map(record => (
+                  <tr key={record.registrationNo} className={selected?.registrationNo === record.registrationNo ? 'active' : ''}>
+                    <td>{record.registrationNo}</td>
+                    <td>
+                      <strong>{record.candidateName || 'Unnamed Candidate'}</strong>
+                      <span>{record.programme}</span>
+                    </td>
+                    <td>{record.mobile || 'No mobile'}</td>
+                    <td><span className="admin-status-pill">{normalizeStatus(record.status)}</span></td>
+                    <td>{record.assignedOfficerName || 'Unassigned'}</td>
+                    <td>
+                      <button type="button" className="admin-table-action" onClick={() => openRecord(record.registrationNo)}>
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {!records.length && !loading && <tr><td colSpan="6" className="admin-empty">No applications found.</td></tr>}
+              </tbody>
+            </table>
           </div>
         </aside>
 
