@@ -53,7 +53,10 @@ export function Link({ to, replace = false, state = null, onClick, children, ...
 export function NavLink({ className, to, ...props }) {
   const location = useLocation();
   const href = normalizeTo(to);
-  const isActive = location.pathname === href.split(/[?#]/)[0];
+  const path = href.split(/[?#]/)[0];
+  const isActive = path === '/'
+    ? location.pathname === path
+    : location.pathname === path || location.pathname.startsWith(`${path}/`);
   const resolvedClassName = typeof className === 'function'
     ? className({ isActive })
     : [className, isActive ? 'active' : ''].filter(Boolean).join(' ');
@@ -61,13 +64,22 @@ export function NavLink({ className, to, ...props }) {
   return <Link {...props} to={to} className={resolvedClassName} />;
 }
 
+const routeMatches = (routePath, currentPath) => {
+  if (routePath === '*') return true;
+  if (routePath === currentPath) return true;
+  const routeParts = routePath.split('/').filter(Boolean);
+  const currentParts = currentPath.split('/').filter(Boolean);
+  if (routeParts.length !== currentParts.length) return false;
+  return routeParts.every((part, index) => part.startsWith(':') || part === currentParts[index]);
+};
+
 export function Routes({ children }) {
   const location = useLocation();
   const routes = React.Children.toArray(children);
   const matchedRoute = routes.find((route) => {
     if (!React.isValidElement(route)) return false;
     const { path } = route.props;
-    return path === '*' || path === location.pathname;
+    return routeMatches(path, location.pathname);
   });
 
   return matchedRoute?.props.element || null;

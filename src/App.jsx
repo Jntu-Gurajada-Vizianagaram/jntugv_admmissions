@@ -44,6 +44,7 @@ export default function App() {
               <Route path="/admin" element={<AdminConsole />} />
               <Route path="/admin/dashboard" element={<AdminConsole />} />
               <Route path="/admin/applications" element={<AdminConsole />} />
+              <Route path="/admin/applications/:registrationNo" element={<AdminConsole />} />
               <Route path="/admin/reports" element={<AdminConsole />} />
               <Route path="/admin/users" element={<AdminConsole />} />
               <Route path="*" element={<NotFound />} />

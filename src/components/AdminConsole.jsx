@@ -63,6 +63,7 @@ const reportDateTime = (value) => (
     : 'Not available'
 );
 const csvCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+const reviewPath = (registrationNo) => `/admin/applications/${encodeURIComponent(registrationNo)}`;
 
 export default function AdminConsole() {
   const location = useLocation();
@@ -101,6 +102,9 @@ export default function AdminConsole() {
   const activeAssignees = officers.filter(officer => officer.active && ['co-convenor', 'officer'].includes(officer.role));
   const departmentLogins = officers.filter(officer => ['co-convenor', 'officer'].includes(officer.role));
   const activeSection = location.pathname.split('/')[2] || 'dashboard';
+  const routeRegistrationNo = activeSection === 'applications'
+    ? decodeURIComponent(location.pathname.split('/')[3] || '')
+    : '';
   const isConvenor = adminUser?.role === 'admin';
   const permittedSections = isConvenor
     ? ['dashboard', 'applications', 'reports', 'users']
@@ -203,7 +207,7 @@ export default function AdminConsole() {
     navigate('/admin', { replace: true });
   };
 
-  const openRecord = async (registrationNo) => {
+  const openRecord = useCallback(async (registrationNo) => {
     setLoading(true);
     setError('');
     try {
@@ -228,7 +232,14 @@ export default function AdminConsole() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentVerifierName]);
+
+  const reviewRecord = useCallback((registrationNo) => {
+    navigate(reviewPath(registrationNo));
+    if (selected?.registrationNo !== registrationNo) {
+      openRecord(registrationNo);
+    }
+  }, [navigate, openRecord, selected?.registrationNo]);
 
   const saveVerification = async () => {
     if (!selected) return;
@@ -282,6 +293,12 @@ export default function AdminConsole() {
     }
   }, [adminUser, loadOfficers, loadRecords, loadReportRecords]);
 
+  useEffect(() => {
+    if (!adminUser || !routeRegistrationNo) return;
+    if (selected?.registrationNo === routeRegistrationNo) return;
+    openRecord(routeRegistrationNo);
+  }, [adminUser, openRecord, routeRegistrationNo, selected?.registrationNo]);
+
   const addOfficer = async (event) => {
     event.preventDefault();
     setError('');
@@ -330,6 +347,12 @@ export default function AdminConsole() {
     verified: dailyApplications.filter(record => record.status === 'Verified').length,
     drafts: dailyDrafts.length,
   }), [dailyApplications, dailyDrafts]);
+  const hasFilteredOutReportRows = Boolean(
+    reportDate
+    && !dailyApplications.length
+    && !dailyDrafts.length
+    && (reportRecords.length || draftRecords.length),
+  );
 
   const downloadDailyReport = () => {
     const header = ['Type', 'Registration / Login', 'Candidate', 'Mobile', 'Email', 'Programme', 'Status', 'Step', 'Date Time'];
@@ -556,6 +579,14 @@ export default function AdminConsole() {
             <span><strong>{dailyCounts.verified}</strong>Verified</span>
           </div>
 
+          {hasFilteredOutReportRows && (
+            <div className="admin-report-notice no-print">
+              <strong>No records matched {reportDate}.</strong>
+              <span>Clear the date filter to view all {reportRecords.length} submitted and {draftRecords.length} drafted applications.</span>
+              <button type="button" className="admin-table-action" onClick={() => setReportDate('')}>All Dates</button>
+            </div>
+          )}
+
           <div className="report-table-panel">
             <div className="report-subsection-title">
               <h4>Received Applications</h4>
@@ -577,7 +608,7 @@ export default function AdminConsole() {
                       <td><span className="admin-status-pill">{normalizeStatus(record.status)}</span></td>
                       <td>{reportDateTime(record.submittedAt)}</td>
                       <td className="no-print">
-                        <button type="button" className="admin-table-action" onClick={() => { navigate('/admin/applications'); openRecord(record.registrationNo); }}>
+                        <button type="button" className="admin-table-action" onClick={() => reviewRecord(record.registrationNo)}>
                           Review
                         </button>
                       </td>
@@ -690,7 +721,7 @@ export default function AdminConsole() {
                     <td><span className="admin-status-pill">{normalizeStatus(record.status)}</span></td>
                     <td>{record.assignedOfficerName || 'Unassigned'}</td>
                     <td>
-                      <button type="button" className="admin-table-action" onClick={() => openRecord(record.registrationNo)}>
+                      <button type="button" className="admin-table-action" onClick={() => reviewRecord(record.registrationNo)}>
                         Review
                       </button>
                     </td>
