@@ -33,6 +33,7 @@ const STORAGE_DRIVER = process.env.STORAGE_DRIVER || 'auto';
 const DB_CONFIGURED = STORAGE_DRIVER !== 'json' && Boolean(process.env.DATABASE_URL || (process.env.DB_NAME && process.env.DB_USER));
 const ADMIN_NOTIFY_EMAIL = process.env.ADMIN_NOTIFY_EMAIL || process.env.ADMIN_USERNAME || '';
 const MAIL_FROM = process.env.MAIL_FROM || process.env.SMTP_USER || ADMIN_NOTIFY_EMAIL;
+const MAIL_DELIVERY_NOTE = 'Please check your Inbox for this email. If it is not found, please check the Spam/Junk folder.';
 const PAYMENT_TITLES = ['Counselling Fee', 'First-Year Tuition Fee'];
 const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
 
@@ -1091,6 +1092,7 @@ const escapeHtml = (value) => String(value || '')
 
 const brandedEmailHtml = ({ title, intro, rows = [], actionUrl = '', actionLabel = 'Open Portal', note = '' }) => {
   const baseUrl = portalUrl();
+  const combinedNote = [note, MAIL_DELIVERY_NOTE].filter(Boolean).join(' ');
   const rowsHtml = rows.map((row, index) => {
     const border = index === rows.length - 1 ? '0' : '1px solid #e5edf7';
     return `<tr>
@@ -1127,7 +1129,7 @@ const brandedEmailHtml = ({ title, intro, rows = [], actionUrl = '', actionLabel
                   ${rowsHtml}
                 </table>
                 ${actionUrl ? `<p style="margin:0 0 18px;"><a href="${actionUrl}" style="display:inline-block;background:#0f2f5f;color:#ffffff;text-decoration:none;font-weight:800;padding:12px 18px;border-radius:6px;">${escapeHtml(actionLabel)}</a></p>` : ''}
-                ${note ? `<p style="margin:0;padding:12px 14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;color:#9a3412;line-height:1.5;">${escapeHtml(note)}</p>` : ''}
+                ${combinedNote ? `<p style="margin:0;padding:12px 14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;color:#9a3412;line-height:1.5;">${escapeHtml(combinedNote)}</p>` : ''}
               </td>
             </tr>
             <tr>
@@ -1157,6 +1159,7 @@ const notifyApplicationSubmitted = async (record) => {
     `Submitted At: ${record.submittedAt}`,
     '',
     `You can check your application status at ${portalUrl()}.`,
+    MAIL_DELIVERY_NOTE,
     '',
     'Congratulations on completing your application!',
     '',
@@ -1208,6 +1211,7 @@ const notifyApplicationUpdated = async (record, previousStatus) => {
       record.verificationNotes ? `Remarks: ${record.verificationNotes}` : '',
       '',
       `Track your application at ${portalUrl()}.`,
+      MAIL_DELIVERY_NOTE,
       '',
       
       'Convenor, JNTUGV_RUKF-IIBMP',
@@ -1240,6 +1244,7 @@ const notifyDepartmentLoginCreated = async ({ user, password }) => {
       `Role: ${user.role}`,
       '',
       'Please sign in and keep this credential secure.',
+      MAIL_DELIVERY_NOTE,
       '',
       'Convenor, JNTUGV_RUKF-IIBMP',
     ].join('\n'),
@@ -1392,6 +1397,7 @@ const notifyPasswordResetLink = async ({ user, token, expiresAt }) => {
       `This link expires at ${expiresAt.toISOString()}.`,
       '',
       'If you did not request this, ignore this email and inform the Directorate of Admissions.',
+      MAIL_DELIVERY_NOTE,
       '',
       'Convenor, JNTUGV_RUKF-IIBMP',
     ].join('\n'),
@@ -1913,6 +1919,7 @@ const notifyApplicantCredentials = async ({ account, password }) => {
       `Portal: ${portalUrl()}/login`,
       '',
       'After final submission, a separate submitted application registration number will be generated.',
+      MAIL_DELIVERY_NOTE,
       '',
       'Convenor, JNTUGV_RUKF-IIBMP',
     ].join('\n'),
@@ -2042,7 +2049,7 @@ const server = createServer(async (req, res) => {
         applicant: publicApplicant(account),
         credentialsSent: Boolean(isNew && password && mailResult?.sent),
         message: isNew && mailResult?.sent
-          ? 'Applicant registered. Login details were sent to the candidate email.'
+          ? `Applicant registered. Login details were sent to the candidate email. ${MAIL_DELIVERY_NOTE}`
           : isNew
             ? `Applicant registered, but email was not sent. Contact admissions with username ${account.username}.`
           : 'Applicant already registered. Use the previously emailed login details.',
@@ -2068,7 +2075,7 @@ const server = createServer(async (req, res) => {
         credentialsSent: Boolean(isNew && password && mailResult?.sent),
         savedAt,
         message: isNew && mailResult?.sent
-          ? 'Draft saved. Applicant login details were sent to the candidate email.'
+          ? `Draft saved. Applicant login details were sent to the candidate email. ${MAIL_DELIVERY_NOTE}`
           : isNew
             ? `Draft saved, but email was not sent. Contact admissions with username ${account.username}.`
           : 'Draft saved. Use the previously emailed applicant login to continue later.',
@@ -2237,7 +2244,7 @@ const server = createServer(async (req, res) => {
           user: publicUser(user),
           credentialsSent: Boolean(mailResult?.sent),
           message: mailResult?.sent
-            ? `Login created and credentials sent to ${email}.`
+            ? `Login created and credentials sent to ${email}. ${MAIL_DELIVERY_NOTE}`
             : `Login created, but the credentials email could not be delivered to ${email}.`,
           ...(!mailResult?.sent ? { temporaryPassword: password } : {}),
         });

@@ -549,6 +549,12 @@
   color: #b45309;
 }
 
+.date-note {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .dates-footer {
   display: flex;
   align-items: flex-start;

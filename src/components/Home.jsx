@@ -21,6 +21,11 @@ import './Home.css';
 
 const notifications = [
   {
+    title: 'Rescheduling of RUKF-IIBMP Admission Counselling',
+    description: 'Admission counselling originally scheduled on 19.08.2026 at 10:00 AM is rescheduled to 20.08.2026 at 10:00 AM.',
+    url: '/rescheduling-of-iibmp-programme.pdf',
+  },
+  {
     title: 'RUKF-IIBMP Admissions 2026-27 Notification and Timeline',
     description: 'Official notification with application dates, counselling schedule, and admission instructions.',
     url: 'https://api.jntugv.edu.in/media/1785324527457-5e5544e2-38a8-41d0-8337-0e4bb8e2dd8a.pdf',
@@ -289,7 +294,7 @@ export default function Home({ page = 'home' }) {
                   </div>
                 </div>
                 <p>
-                  Online applications are open for 5 Years International Integrated Bachelor and Master&apos;s Programmes. Last date is 14.08.2026, late-fee date is 18.08.2026, and counselling is scheduled on 19.08.2026 at 10:00 AM.
+                  Online applications are open for 5 Years International Integrated Bachelor and Master&apos;s Programmes. Last date is 14.08.2026, late-fee date is 18.08.2026, and admission counselling is rescheduled to 20.08.2026 at 10:00 AM.
                 </p>
                 <div className="programme-facts" aria-label="Programme overview">
                   <article>
@@ -340,8 +345,9 @@ export default function Home({ page = 'home' }) {
                   <span className="date-value">18.08.2026</span>
                 </li>
                 <li className="highlight-date">
-                  <span className="date-label">Admission Counselling</span>
-                  <span className="date-value">19.08.2026 at 10:00 AM</span>
+                  <span className="date-label">Admission Counselling Rescheduled</span>
+                  <span className="date-value">20.08.2026 at 10:00 AM</span>
+                  <span className="date-note">Originally scheduled on 19.08.2026 at 10:00 AM.</span>
                 </li>
               </ul>
               <div className="dates-footer">

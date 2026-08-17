@@ -73,7 +73,7 @@ export default function ApplicationForm() {
         <section className="application-notice-page">
           <div className="application-status-badge">Applicant login required</div>
           <h1>Register before filling the application</h1>
-          <p>Register first to receive your applicant username and password by email. Login with those details to fill, save, and continue your application later.</p>
+          <p>Register first to receive your applicant username and password by email. If the email is not found in your Inbox, check the Spam/Junk folder. Login with those details to fill, save, and continue your application later.</p>
           <Link to="/register" className="btn btn-primary">Register or Login</Link>
         </section>
       </div>

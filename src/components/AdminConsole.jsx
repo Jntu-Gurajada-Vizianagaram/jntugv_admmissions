@@ -825,7 +825,7 @@ export default function AdminConsole() {
         <section className="officer-console no-print">
           <div>
             <h3>Department Login Management</h3>
-            <p>{isConvenor ? 'Create Co-convenor and Verification Officer logins. The username and a secure temporary password are automatically emailed to the user.' : 'Create Verification Officer logins. Co-convenor accounts cannot create or change other Co-convenor logins.'}</p>
+            <p>{isConvenor ? 'Create Co-convenor and Verification Officer logins. The username and a secure temporary password are automatically emailed to the user. If the email is not found in the Inbox, ask the user to check Spam/Junk.' : 'Create Verification Officer logins. Co-convenor accounts cannot create or change other Co-convenor logins. If the email is not found in the Inbox, ask the user to check Spam/Junk.'}</p>
           </div>
           <form className="officer-form" onSubmit={addOfficer}>
             <input required placeholder="Name" value={officerForm.name} onChange={(event) => setOfficerForm(prev => ({ ...prev, name: event.target.value }))} />

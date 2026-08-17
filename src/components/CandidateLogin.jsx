@@ -116,7 +116,7 @@ export default function CandidateLogin() {
         <div className="candidate-login-copy">
           <p className="page-kicker">Applicant Registration and Login</p>
           <h2>RUKF-IIBMP Admissions 2026-27</h2>
-          <p>Register once, receive your applicant login by email, then continue the application from any device.</p>
+          <p>Register once, receive your applicant login by email, then continue the application from any device. If the email is not found in your Inbox, check the Spam/Junk folder.</p>
         </div>
 
         {message && (
@@ -138,7 +138,7 @@ export default function CandidateLogin() {
             <div>
               <span className="candidate-card-kicker">New Applicant</span>
               <h3>Create Applicant Login</h3>
-              <p>Your username and password will be emailed after registration.</p>
+              <p>Your username and password will be emailed after registration. Check your Inbox first; if not found, check the Spam/Junk folder.</p>
             </div>
             <label>
               Candidate Name
@@ -182,7 +182,7 @@ export default function CandidateLogin() {
             <div>
               <span className="candidate-card-kicker">Returning Applicant</span>
               <h3>Continue Application</h3>
-              <p>Use the applicant login sent to your email.</p>
+              <p>Use the applicant login sent to your email. If it is not in your Inbox, check the Spam/Junk folder.</p>
             </div>
             <label>
               Applicant Username
