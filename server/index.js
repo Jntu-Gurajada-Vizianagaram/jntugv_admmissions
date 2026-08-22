@@ -28,6 +28,7 @@ const VERIFICATION_STAGES = ['Submitted', 'Under Review / Verification in Progre
 const REVIEW_STATUSES = VERIFICATION_STAGES.filter(status => status !== FINAL_ADMISSION_STATUS);
 const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET || 'jntugv-admissions-local-secret';
 const APPLICATION_OPENS_AT = new Date('2026-07-30T17:00:00+05:30').getTime();
+const APPLICATION_CLOSES_AT = new Date('2026-08-22T17:00:00+05:30').getTime();
 const APPLICATION_OPEN_OVERRIDE = String(process.env.APPLICATION_OPEN_OVERRIDE || '').toLowerCase() === 'true';
 const STORAGE_DRIVER = process.env.STORAGE_DRIVER || 'auto';
 const DB_CONFIGURED = STORAGE_DRIVER !== 'json' && Boolean(process.env.DATABASE_URL || (process.env.DB_NAME && process.env.DB_USER));
@@ -171,9 +172,9 @@ const initializeDatabase = async () => {
       INDEX idx_applications_candidate (candidate_name, candidate_email, candidate_mobile)
     )
   `);
-  await db.query('ALTER TABLE applications ADD COLUMN applicant_id VARCHAR(80) NULL').catch(() => {});
-  await db.query('ALTER TABLE applications ADD COLUMN applicant_username VARCHAR(40) NULL').catch(() => {});
-  await db.query('CREATE INDEX idx_applications_applicant ON applications (applicant_id, applicant_username)').catch(() => {});
+  await db.query('ALTER TABLE applications ADD COLUMN applicant_id VARCHAR(80) NULL').catch(() => { });
+  await db.query('ALTER TABLE applications ADD COLUMN applicant_username VARCHAR(40) NULL').catch(() => { });
+  await db.query('CREATE INDEX idx_applications_applicant ON applications (applicant_id, applicant_username)').catch(() => { });
   await db.query(`
     CREATE TABLE IF NOT EXISTS application_payments (
       id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -223,8 +224,8 @@ const initializeDatabase = async () => {
       INDEX idx_applicant_submitted_registration (submitted_registration_no)
     )
   `);
-  await db.query('ALTER TABLE applicant_accounts ADD COLUMN submitted_registration_no VARCHAR(80) NULL').catch(() => {});
-  await db.query('CREATE INDEX idx_applicant_submitted_registration ON applicant_accounts (submitted_registration_no)').catch(() => {});
+  await db.query('ALTER TABLE applicant_accounts ADD COLUMN submitted_registration_no VARCHAR(80) NULL').catch(() => { });
+  await db.query('CREATE INDEX idx_applicant_submitted_registration ON applicant_accounts (submitted_registration_no)').catch(() => { });
   await db.query(`
     CREATE TABLE IF NOT EXISTS applicant_drafts (
       applicant_id VARCHAR(80) NOT NULL PRIMARY KEY,
@@ -1213,7 +1214,7 @@ const notifyApplicationUpdated = async (record, previousStatus) => {
       `Track your application at ${portalUrl()}.`,
       MAIL_DELIVERY_NOTE,
       '',
-      
+
       'Convenor, JNTUGV_RUKF-IIBMP',
     ].filter(Boolean).join('\n'),
     html: brandedEmailHtml({
@@ -2052,7 +2053,7 @@ const server = createServer(async (req, res) => {
           ? `Applicant registered. Login details were sent to the candidate email. ${MAIL_DELIVERY_NOTE}`
           : isNew
             ? `Applicant registered, but email was not sent. Contact admissions with username ${account.username}.`
-          : 'Applicant already registered. Use the previously emailed login details.',
+            : 'Applicant already registered. Use the previously emailed login details.',
       });
     }
 
@@ -2078,7 +2079,7 @@ const server = createServer(async (req, res) => {
           ? `Draft saved. Applicant login details were sent to the candidate email. ${MAIL_DELIVERY_NOTE}`
           : isNew
             ? `Draft saved, but email was not sent. Contact admissions with username ${account.username}.`
-          : 'Draft saved. Use the previously emailed applicant login to continue later.',
+            : 'Draft saved. Use the previously emailed applicant login to continue later.',
       });
     }
 
@@ -2288,9 +2289,9 @@ const server = createServer(async (req, res) => {
     }
 
     if (req.method === 'POST' && url.pathname === '/api/applications') {
-      if (!APPLICATION_OPEN_OVERRIDE && Date.now() < APPLICATION_OPENS_AT) {
+      if (!APPLICATION_OPEN_OVERRIDE && (Date.now() < APPLICATION_OPENS_AT || Date.now() >= APPLICATION_CLOSES_AT)) {
         return json(res, 403, {
-          message: 'Online applications open on 30 July 2026 at 5:00 PM IST.',
+          message: 'Online applications are currently closed.',
         });
       }
       const body = await readBody(req);
